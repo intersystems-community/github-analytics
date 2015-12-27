@@ -115,7 +115,7 @@ Return repository's detail info page parser</Description>
 	set page.request.Https=1
 	
 	#define g(%prop) $get(session(%prop))	
-	if $data(session) {
+	if $get(session)'="" {
 		set sc = page.request.InsertCookie($$$g("name"),$$$g("value"),$$$g("path"),..#SERVER,$$$g("expires"),$$$g("secure"))
 		}
 		
