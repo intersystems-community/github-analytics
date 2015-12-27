@@ -51,7 +51,7 @@ organization's repositories collection</Description>
 url</Description>
 <Type>%String</Type>
 <Calculated>1</Calculated>
-<SqlComputeCode> s {*} = ##class(GitHub.Organization).GetLink({Name})</SqlComputeCode>
+<SqlComputeCode> set {*} = ##class(GitHub.Organization).GetLink({Name})</SqlComputeCode>
 <SqlComputed>1</SqlComputed>
 </Property>
 
@@ -59,7 +59,7 @@ url</Description>
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
 <FormalSpec>name</FormalSpec>
-<Implementation><![CDATA[$S(name'="":"https://github.com/"_name,1:"")
+<Implementation><![CDATA[$select(name'="":"https://github.com/"_name,1:"")
 ]]></Implementation>
 </Method>
 
@@ -74,9 +74,9 @@ url</Description>
 		, :data("OrgLink"), :data("Description"), :data("People") )
 	)
 	if SQLCODE=0 {
-		s data=%ROWID Q 1
+		set data=%ROWID Quit 1
 	}
-	Q $$$ERROR(,$system.SQL.SQLCODE( SQLCODE ))
+	Quit $$$ERROR(,$system.SQL.SQLCODE( SQLCODE ))
 ]]></Implementation>
 </Method>
 
@@ -88,8 +88,6 @@ url</Description>
 <IndexLocation>^GitHub.OrganizationI</IndexLocation>
 <StreamLocation>^GitHub.OrganizationS</StreamLocation>
 <Data name="OrganizationDefaultData">
-<Structure>listnode</Structure>
-<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

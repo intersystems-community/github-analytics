@@ -11,31 +11,31 @@ Check or create default ssl config</Description>
 <FormalSpec>config="github.com"</FormalSpec>
 <Implementation><![CDATA[
 	/// Quit with namespace restoring
-	#define QUIT s $namespace = ns Q sc
+	#define QUIT set $namespace = ns Quit sc
 	
-	s ns = $namespace,  $namespace = "%SYS"
-	s sc = ##class(Security.SSLConfigs).Exists( config ) if sc $$$QUIT
+	set ns = $namespace,  $namespace = "%SYS"
+	set sc = ##class(Security.SSLConfigs).Exists( config ) if sc $$$QUIT
 	
-	s config("CAFile")=""
-	s config("CAPath")=""
-	s config("CRLFile")=""
-	s config("CertificateFile")=""
-	s config("CipherList")="ALL:!aNULL:!eNULL:!EXP:!SSLv2"
-	s config("Description")=""
-	s config("Enabled")=1
-	s config("PrivateKeyFile")=""
-	s config("PrivateKeyPassword")=""
-	s config("PrivateKeyType")=2
-	s config("Protocols")=7
-	s config("Type")=0
-	s config("VerifyDepth")=9
-	s config("VerifyPeer")=0
+	set config("CAFile")=""
+	set config("CAPath")=""
+	set config("CRLFile")=""
+	set config("CertificateFile")=""
+	set config("CipherList")="ALL:!aNULL:!eNULL:!EXP:!SSLv2"
+	set config("Description")=""
+	set config("Enabled")=1
+	set config("PrivateKeyFile")=""
+	set config("PrivateKeyPassword")=""
+	set config("PrivateKeyType")=2
+	set config("Protocols")=7
+	set config("Type")=0
+	set config("VerifyDepth")=9
+	set config("VerifyPeer")=0
 	
- 	s sc = ##class(Security.SSLConfigs).Create( config, .config ) 
+ 	set sc = ##class(Security.SSLConfigs).Create( config, .config ) 
  	if 'sc $$$QUIT
- 	s ssl = ##class(Security.SSLConfigs).%OpenId( config, ,.sc )
+ 	set ssl = ##class(Security.SSLConfigs).%OpenId( config, ,.sc )
  	if 'sc $$$QUIT
- 	s sc = ssl.Activate()
+ 	set sc = ssl.Activate()
  	
  	$$$QUIT
 ]]></Implementation>

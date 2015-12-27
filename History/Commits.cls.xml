@@ -30,21 +30,21 @@ Extract date and amount of commits
 <FormalSpec><![CDATA[html:%String,&data]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	s dateFirstStart = $f(html,"""week"":"), dateFirstEnd = $f(html,"}",dateFirstStart)-($l("}")+1)
-	s data("FirstDate") = $e(html,dateFirstStart,dateFirstEnd)
-	s pos = $f(html,"days"), commits = ""
-	while $f(html,"days",pos){
-		s pos = $f(html,"[",pos), daysEnd = $f(html,"]",pos)-($l("]")+1)
-		s commits = commits_","_$e(html,pos,daysEnd)
+	set dateFirstStart = $find(html,"""week"":"), dateFirstEnd = $find(html,"}",dateFirstStart)-($length("}")+1)
+	set data("FirstDate") = $extract(html,dateFirstStart,dateFirstEnd)
+	set pos = $find(html,"days"), commits = ""
+	while $find(html,"days",pos){
+		set pos = $find(html,"[",pos), daysEnd = $find(html,"]",pos)-($length("]")+1)
+		set commits = commits_","_$extract(html,pos,daysEnd)
 		}
 	
-	s num = 0, pos = 1
-	while $f(commits,",",pos){
-		s pos = $f(commits,",",pos), num = num + 1
-		s data(num) = $p(commits, ",", (num+1))
+	set num = 0, pos = 1
+	while $find(commits,",",pos){
+		set pos = $find(commits,",",pos), num = num + 1
+		set data(num) = $piece(commits, ",", (num+1))
 		}
 
-	Q 1
+	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -54,24 +54,24 @@ Extract date and amount of commits
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 
-	s start = 4070908800, secondsPerDay = 86400, sc = 1
+	set start = 4070908800, secondsPerDay = 86400, sc = 1
 	//$zd((start+date)/86400) = date of sunday - first day of week
 	//End of week is saturday, date is seconds from <var>start<var>
 	//86400 - senonds in 24 hours
-	s num = 1, dateExternal = data("FirstDate")-secondsPerDay
-	while $d(data(num)){
-		s dateExternal = dateExternal + secondsPerDay
-		Q:((start+dateExternal)\secondsPerDay)>=(+$h) 
-		s dateInternal = $zdt((start+dateExternal)\secondsPerDay,3)
-		s commits = data(num)
+	set num = 1, dateExternal = data("FirstDate")-secondsPerDay
+	while $data(data(num)){
+		set dateExternal = dateExternal + secondsPerDay
+		Quit:((start+dateExternal)\secondsPerDay)>=(+$horolog) 
+		set dateInternal = $zdt((start+dateExternal)\secondsPerDay,3)
+		set commits = data(num)
 		&sql(Insert Into History.Commits (Repository, Amount, DateOfData)
 			Values (:data("RepositoryId"), :commits, :dateInternal))
-		s sc = sc!SQLCODE
-		Q:SQLCODE
-		s num = num + 1
+		set sc = sc!SQLCODE
+		Quit:SQLCODE
+		set num = num + 1
 	}
-	k data
-	Q sc
+	kill data
+	Quit sc
 ]]></Implementation>
 </Method>
 

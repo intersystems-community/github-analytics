@@ -111,16 +111,16 @@ This class contain information about repositories</Description>
 <FormalSpec><![CDATA[&data=""]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-#;	s obj = ##class(GitHub.Repository).%New()
-#;	s obj.Description = data("Description"), obj.Forks = data("Forks")
+#;	set obj = ##class(GitHub.Repository).%New()
+#;	set obj.Description = data("Description"), obj.Forks = data("Forks")
 #;	, obj.Link = data("Link"), obj.Name = data("Name"), obj.Organization = data("Organization")
 #;	,obj.Stars = data("Stars"), obj.Updated = data("Updated")
 #;	
-#;	s sc = obj.%Save()
-#;	d:'sc $system.Status.DisplayError(sc)
-#;	s data = obj.%Id()
-#;	k obj
-#;	Q 1
+#;	set sc = obj.%Save()
+#;	do:'sc $system.Status.DisplayError(sc)
+#;	set data = obj.%Id()
+#;	kill obj
+#;	Quit 1
 	
 	&sql(
 		Insert Into GitHub.Repository (Organization, Type, Name, Stars, Forks, Link, Updated, Description)
@@ -130,10 +130,10 @@ This class contain information about repositories</Description>
 		)
 	)
 	if SQLCODE=0 {
-		s data = %ROWID Q 1	
+		set data = %ROWID Quit 1	
 	}
 	
-	Q $$$ERROR(,$system.SQL.SQLCODE(SQLCODE))
+	Quit $$$ERROR(,$system.SQL.SQLCODE(SQLCODE))
 ]]></Implementation>
 </Method>
 
@@ -147,21 +147,21 @@ This class contain information about repositories</Description>
 		, Releases = :data("Releases"), Contributors = :data("Contributors")
 		Where Id =:data("Id") 
 	)
-	Q:SQLCODE 0
+	Quit:SQLCODE 0
 	
-	Q:'$d(data("LanguageDetails","Amount")) 1
-	Q:data("LanguageDetails","Amount")=0 $$$ERROR($$$GeneralError,"Amount of languages = 0") 
+	Quit:'$data(data("LanguageDetails","Amount")) 1
+	Quit:data("LanguageDetails","Amount")=0 $$$ERROR($$$GeneralError,"Amount of languages = 0") 
 	
-	s repositoryObj = ##class(GitHub.Repository).%OpenId(data("Id"))
-	s amount = data("LanguageDetails","Amount"), i = 1
+	set repositoryObj = ##class(GitHub.Repository).%OpenId(data("Id"))
+	set amount = data("LanguageDetails","Amount"), i = 1
 	while i<=amount{
-		s sc = repositoryObj.LanguageDetails.SetAt(data("LanguageDetails",i,"Percent"),data("LanguageDetails",i,"Language"))
-		Q:'sc
-		s i = i + 1
+		set sc = repositoryObj.LanguageDetails.SetAt(data("LanguageDetails",i,"Percent"),data("LanguageDetails",i,"Language"))
+		Quit:'sc
+		set i = i + 1
 		}
-	Q:'sc sc
-	s sc = repositoryObj.%Save()
-	Q sc
+	Quit:'sc sc
+	set sc = repositoryObj.%Save()
+	Quit sc
 ]]></Implementation>
 </Method>
 

@@ -30,16 +30,16 @@ Extract date and amount of views
 <FormalSpec><![CDATA[html:%String,&data]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	s pos = $f(html,"bucket"":"), num = 0, pos = 1
-	while $f(html,"bucket"":",pos){
-		s num = num + 1
-		s pos = $f(html,"bucket"":",pos), end = $f(html,",",pos)-($l(",")+1)
-		s data(num,"date") = $e(html,pos,end)
-		s pos = $f(html,"total"":",pos), end = $f(html,",",pos)-($l(",")+1)
-		s data(num,"amount") = $e(html,pos,end)
+	set pos = $find(html,"bucket"":"), num = 0, pos = 1
+	while $find(html,"bucket"":",pos){
+		set num = num + 1
+		set pos = $find(html,"bucket"":",pos), end = $find(html,",",pos)-($length(",")+1)
+		set data(num,"date") = $extract(html,pos,end)
+		set pos = $find(html,"total"":",pos), end = $find(html,",",pos)-($length(",")+1)
+		set data(num,"amount") = $extract(html,pos,end)
 		}
 
-	Q 1
+	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -49,26 +49,26 @@ Extract date and amount of views
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 
-	s start = 4070908800, secondsPerDay = 86400, sc = 1
+	set start = 4070908800, secondsPerDay = 86400, sc = 1
 	//$zd((start+date)/86400) = date of sunday - first day of week
 	//End of week is saturday, date is seconds from <var>start<var>
 	//86400 - senonds in 24 hours
-	s num = 1
-	while $d(data(num,("date"))){
-		if ((start+data(num,"date"))\secondsPerDay)>=(+$h){
-			s num = num + 1
+	set num = 1
+	while $data(data(num,("date"))){
+		if ((start+data(num,"date"))\secondsPerDay)>=(+$horolog){
+			set num = num + 1
 			Continue
 			}
-		s dateInternal = $zdt((start+data(num,"date"))\secondsPerDay,3)
-		s amount = data(num,"amount")
+		set dateInternal = $zdt((start+data(num,"date"))\secondsPerDay,3)
+		set amount = data(num,"amount")
 		&sql(Insert Into History.Clones (Repository, Amount, DateOfData)
 			Values (:data("RepositoryId"), :amount, :dateInternal))
-		s sc = sc!SQLCODE
-		Q:SQLCODE
-		s num = num + 1
+		set sc = sc!SQLCODE
+		Quit:SQLCODE
+		set num = num + 1
 	}
-	k data
-	Q sc
+	kill data
+	Quit sc
 ]]></Implementation>
 </Method>
 

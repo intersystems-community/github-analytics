@@ -10,36 +10,36 @@
 <FormalSpec><![CDATA[login="",password="",&session]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	s request = ##class(%Net.HttpRequest).%New()
+	set request = ##class(%Net.HttpRequest).%New()
 	
-	s sslConfigName = ##class(GitHub.OrganizationPage).#SERVER
-	s request.Server = sslConfigName
-	s sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
-		w !, "SSLConfig error: ", sc 	
+	set sslConfigName = ##class(GitHub.OrganizationPage).#SERVER
+	set request.Server = sslConfigName
+	set sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
+		write !, "SSLConfig error: ", sc 	
 	}
-	s request.SSLConfiguration = sslConfigName
-	s request.Https=1
+	set request.SSLConfiguration = sslConfigName
+	set request.Https=1
 	
-	s sc = request.Get("/login")
-	s strm = ##class(%Stream.FileCharacter).%New()
-	s sc = strm.CopyFrom( request.HttpResponse.Data )
+	set sc = request.Get("/login")
+	set strm = ##class(%Stream.FileCharacter).%New()
+	set sc = strm.CopyFrom( request.HttpResponse.Data )
 	
-	s authenticityToken = ..ParseAuthenticityToken(strm)
+	set authenticityToken = ..ParseAuthenticityToken(strm)
 	
-	d request.InsertFormData("commit","Sign in")
+	do request.InsertFormData("commit","Sign in")
 	, request.InsertFormData("login",login), request.InsertFormData("password",password)
 	, request.InsertFormData("authenticity_token",authenticityToken) , request.InsertFormData("utf8","&#x2713;")
-	s sc = request.Post("/session") 
+	set sc = request.Post("/session") 
 	
-	s setCookie = request.HttpResponse.Headers("SET-COOKIE")
-	s setCookie = $p(setCookie,",",1,2)
+	set setCookie = request.HttpResponse.Headers("SET-COOKIE")
+	set setCookie = $piece(setCookie,",",1,2)
 	
-	s session("name") = $p(setCookie,"="), session("secure") = 1
-	, session("value") = $p(setCookie,";"), session("value") = $p(session("value"),"=",2)
-	, session("path") = $p(setCookie,";",2), session("path") = $p(session("path"),"path=",2)
-	, session("expires") = $p(setCookie,";",3), session("expires") = $p(session("expires"),"expires=",2)
+	set session("name") = $piece(setCookie,"="), session("secure") = 1
+	, session("value") = $piece(setCookie,";"), session("value") = $piece(session("value"),"=",2)
+	, session("path") = $piece(setCookie,";",2), session("path") = $piece(session("path"),"path=",2)
+	, session("expires") = $piece(setCookie,";",3), session("expires") = $piece(session("expires"),"expires=",2)
 
-	Q sc
+	Quit sc
 ]]></Implementation>
 </Method>
 
@@ -55,15 +55,15 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
 <FormalSpec>html</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-	s begin = html.FindAt( 1, "name=""authenticity_token""" ) 
-	s end = html.FindAt( begin , "</div>"  )
-	s sc = html.MoveTo( begin ) 
-	s length = end - begin
-	s authTokenHtml = html.Read( .length )
+	set begin = html.FindAt( 1, "name=""authenticity_token""" ) 
+	set end = html.FindAt( begin , "</div>"  )
+	set sc = html.MoveTo( begin ) 
+	set length = end - begin
+	set authTokenHtml = html.Read( .length )
 	
-	s authToken = $p( authTokenHtml, "value=""", 2 )	
-	s authToken = $p( authToken, """")
-	Q authToken
+	set authToken = $piece( authTokenHtml, "value=""", 2 )	
+	set authToken = $piece( authToken, """")
+	Quit authToken
 ]]></Implementation>
 </Method>
 </Class>

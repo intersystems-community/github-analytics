@@ -10,7 +10,7 @@ Load repositories of organization</Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec>page</FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[	Q ##class(GitHub.RepositoriesLoader).Scan( page )
+<Implementation><![CDATA[	Quit ##class(GitHub.RepositoriesLoader).Scan( page )
 ]]></Implementation>
 </Method>
 
@@ -22,18 +22,18 @@ Scan across all organization's pages</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	
-	s sc = 1, i = 1 
+	set sc = 1, i = 1 
 
-	s pages = page.Pages() Q:pages=0 $$$ERROR($$$GeneralError,"Can't parse pages count ") 
+	set pages = page.Pages() Quit:pages=0 $$$ERROR($$$GeneralError,"Can't parse pages count ") 
 	
 	while i <= pages {
 		
-		s sc = page.Parse() Q:'sc
-		w !, "Page of repositories #", i, " successfuly loaded", !
-		s i = i + 1, sc = page.Get( , i ) ;load next page #i in parser  
-		Q:'sc 
+		set sc = page.Parse() Quit:'sc
+		write !, "Page of repositories #", i, " successfuly loaded", !
+		set i = i + 1, sc = page.Get( , i ) ;load next page #i in parser  
+		Quit:'sc 
 		}
-	Q sc
+	Quit sc
 ]]></Implementation>
 </Method>
 
@@ -46,15 +46,15 @@ If handler return 0, parsing will be interrupted]]></Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	
-	Q:'##class(GitHub.Organization).NameExists( ..Organization, .organizationId ) 0
-	s data("Organization") = organizationId
-	s data("Link") = "https://github.com/"_..Organization_"/"_$g(data("Name"))
+	Quit:'##class(GitHub.Organization).NameExists( ..Organization, .organizationId ) 0
+	set data("Organization") = organizationId
+	set data("Link") = "https://github.com/"_..Organization_"/"_$get(data("Name"))
 	
-	s sc = ##class(GitHub.Repository).Insert( .data ) 
+	set sc = ##class(GitHub.Repository).Insert( .data ) 
 
-	w $g(data), " " ;output repository id
+	write $get(data), " " ;output repository id
 	
-	Q sc
+	Quit sc
 ]]></Implementation>
 </Method>
 </Class>

@@ -53,8 +53,8 @@ current position in content</Description>
 <ReturnType>%Status</ReturnType>
 <ServerOnly>1</ServerOnly>
 <Implementation><![CDATA[
-	s ..Organization = $g(organization)
-	s ..Num = $g(num)
+	set ..Organization = $get(organization)
+	set ..Num = $get(num)
 	Quit $$$OK
 ]]></Implementation>
 </Method>
@@ -79,10 +79,10 @@ Html content of current page</Description>
 getter</Description>
 <ReturnType>%Stream</ReturnType>
 <Implementation><![CDATA[
-	Q:'$IsObject(..request) ""
-	s strm = ##class(%Stream.FileCharacter).%New()
-	s sc = strm.CopyFrom( ..request.HttpResponse.Data )
-	Q strm
+	Quit:'$IsObject(..request) ""
+	set strm = ##class(%Stream.FileCharacter).%New()
+	set sc = strm.CopyFrom( ..request.HttpResponse.Data )
+	Quit strm
 ]]></Implementation>
 </Method>
 
@@ -92,13 +92,13 @@ Load page content from "github.com/{organization}?page={num}"</Description>
 <FormalSpec>organization="",num=""</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	if $g(organization)'="" s ..Organization = organization
-	if $g(num)'="" s ..Num = num
+	if $get(organization)'="" set ..Organization = organization
+	if $get(num)'="" set ..Num = num
 	
 	
-	s sc = ..request.Get( ..Url() ) Q:'sc sc
+	set sc = ..request.Get( ..Url() ) Quit:'sc sc
 		
-	Q 1
+	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -109,27 +109,27 @@ Return repositories page parser</Description>
 <FormalSpec><![CDATA[organization="intersystems-ru",num="1",&sc,&session]]></FormalSpec>
 <ReturnType>OrganizationPage</ReturnType>
 <Implementation><![CDATA[
-	s page = ..%New(organization, num)
+	set page = ..%New(organization, num)
 	
-	s page.request = ##class(%Net.HttpRequest).%New()
+	set page.request = ##class(%Net.HttpRequest).%New()
 	
-	s sslConfigName = ..#SERVER
-	s page.request.Server = sslConfigName
-	s sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
-		w !, "SSLConfig error: ", sc 	
+	set sslConfigName = ..#SERVER
+	set page.request.Server = sslConfigName
+	set sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
+		write !, "SSLConfig error: ", sc 	
 	}
-	s page.request.SSLConfiguration = sslConfigName
-	s page.request.Https=1
+	set page.request.SSLConfiguration = sslConfigName
+	set page.request.Https=1
 	
-	#define g(%prop) $g(session(%prop))	
-	if $d(session) {
-		s sc = page.request.InsertCookie($$$g("name"),$$$g("value"),$$$g("path"),..#SERVER,$$$g("expires"),$$$g("secure"))
+	#define g(%prop) $get(session(%prop))	
+	if $data(session) {
+		set sc = page.request.InsertCookie($$$g("name"),$$$g("value"),$$$g("path"),..#SERVER,$$$g("expires"),$$$g("secure"))
 		}
 		
-	s sc = page.Get() 
-	Q:'sc ""
+	set sc = page.Get() 
+	Quit:'sc ""
 	
-	Q page
+	Quit page
 ]]></Implementation>
 </Method>
 
@@ -145,15 +145,15 @@ And extract data from penult available page link]]></Description>
 <ReturnType>%Integer</ReturnType>
 <Implementation><![CDATA[
 	
-	s end = html.FindAt( 1, ..#RepositoriesTableEnd ) 
-	s begin = html.FindAt( end , "<div class=""pagination"">"  )
-	Q:begin=-1 1 ;if there is no pages, then it have only 1 page
-	s sc = html.MoveTo( begin ) 
-	s str = html.ReadLine()
-	s list = $LFS( str,"</a>")
-	s penult = $LG( list, $ll( list ) - 2 ) ; "<a href="/intersystems-ru?page=4">4"
-	s count = $p( penult, ">", *) ;4
-	Q +count
+	set end = html.FindAt( 1, ..#RepositoriesTableEnd ) 
+	set begin = html.FindAt( end , "<div class=""pagination"">"  )
+	Quit:begin=-1 1 ;if there is no pages, then it have only 1 page
+	set sc = html.MoveTo( begin ) 
+	set str = html.ReadLine()
+	set list = $LFS( str,"</a>")
+	set penult = $LG( list, $ll( list ) - 2 ) ; "<a href="/intersystems-ru?page=4">4"
+	set count = $piece( penult, ">", *) ;4
+	Quit +count
 ]]></Implementation>
 </Method>
 
@@ -172,35 +172,35 @@ Move from repositories table begin to the end of table</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	
-	s html = ..Html 
-	d html.Rewind()
-	s ..pos=0
+	set html = ..Html 
+	do html.Rewind()
+	set ..pos=0
 	
-	s pos = html.FindAt( 1, ..#RepositoryBegin ) 
+	set pos = html.FindAt( 1, ..#RepositoryBegin ) 
     if pos = -1 {
-	    s sc = $$$ERROR(,"Not found begin of repositories table") Q 0
+	    set sc = $$$ERROR(,"Not found begin of repositories table") Quit 0
     }
-	s ..pos = pos
-    s pos = pos + $l( ..#RepositoryBegin )
+	set ..pos = pos
+    set pos = pos + $length( ..#RepositoryBegin )
     
-    s end = html.FindAt( pos, ..#RepositoriesTableEnd ) 
+    set end = html.FindAt( pos, ..#RepositoriesTableEnd ) 
     if end = -1 {
-	    s sc = $$$ERROR(,"Not found end of repositories table") Q 0
+	    set sc = $$$ERROR(,"Not found end of repositories table") Quit 0
     }
 	
-	s sc = html.MoveTo( pos ) Q:'sc ""
+	set sc = html.MoveTo( pos ) Quit:'sc ""
 	
 	while pos < end {
 		
-		s pos = html.FindAt( pos, ..#RepositoryBegin ) Q:pos=-1
-		s sc = ..repositoryBegin( pos ) Q:'sc 
-		s pos = pos + $l(..#RepositoryBegin) ;offset
+		set pos = html.FindAt( pos, ..#RepositoryBegin ) Quit:pos=-1
+		set sc = ..repositoryBegin( pos ) Quit:'sc 
+		set pos = pos + $length(..#RepositoryBegin) ;offset
 		
 	}
 	if sc && ( ..pos < end) {
-		s sc = ..repositoryBegin( end ) ;for last topic	
+		set sc = ..repositoryBegin( end ) ;for last topic	
 	}
-	Q sc
+	Quit sc
 ]]></Implementation>
 </Method>
 
@@ -211,11 +211,11 @@ found begin of repository in html content</Description>
 <Private>1</Private>
 <ReturnType>%Boolean</ReturnType>
 <Implementation><![CDATA[
-	s html = ..Html 
+	set html = ..Html 
 	
-	s sc = html.MoveTo( ..pos ), length = pos - ..pos 
-	s repositoryHtml = html.Read( .length )
-	s ..pos = pos
+	set sc = html.MoveTo( ..pos ), length = pos - ..pos 
+	set repositoryHtml = html.Read( .length )
+	set ..pos = pos
 	
 	/* Example of repository content
 	<div class="repo-list-item public fork" itemprop="owns" itemscope itemtype="http://schema.org/Code">
@@ -251,15 +251,15 @@ found begin of repository in html content</Description>
 		</div>
 	</div>*/
     
-    s repository( "Type" ) = ..ParseType( repositoryHtml )
-    s repository( "Stars" ) = ..ParseStars( repositoryHtml )
-	s repository( "Forks" ) = ..ParseForks( repositoryHtml )
-	s repository( "Name" ) = ..ParseName( repositoryHtml )
-	s repository( "Description" ) = ..ParseDescription( repositoryHtml )
-	s repository( "Updated" ) = ..ParseUpdated( repositoryHtml )
+    set repository( "Type" ) = ..ParseType( repositoryHtml )
+    set repository( "Stars" ) = ..ParseStars( repositoryHtml )
+	set repository( "Forks" ) = ..ParseForks( repositoryHtml )
+	set repository( "Name" ) = ..ParseName( repositoryHtml )
+	set repository( "Description" ) = ..ParseDescription( repositoryHtml )
+	set repository( "Updated" ) = ..ParseUpdated( repositoryHtml )
 	
 	
-	Q ..OnRepository( .repository )
+	Quit ..OnRepository( .repository )
 ]]></Implementation>
 </Method>
 
@@ -270,10 +270,10 @@ Extract private or public repository
 <ClassMethod>1</ClassMethod>
 <FormalSpec>repository:%String</FormalSpec>
 <Implementation><![CDATA[
-	s type = $p( repository, ..#RepositoryBegin_" ", 2 )	
-	s type = $p( type, " ")
-	s type = $zstrip( type, "<>WC" )
-	Q type
+	set type = $piece( repository, ..#RepositoryBegin_" ", 2 )	
+	set type = $piece( type, " ")
+	set type = $zstrip( type, "<>WC" )
+	Quit type
 ]]></Implementation>
 </Method>
 
@@ -287,10 +287,10 @@ Extract amount of stars
 <ClassMethod>1</ClassMethod>
 <FormalSpec>repository:%String</FormalSpec>
 <Implementation><![CDATA[
-	s stars = $p( repository, "<span class=""octicon octicon-star ""></span>", 2 )	
-	s stars = $p( stars, "</a>")
-	s stars = $zstrip( stars, "<>WC" )
-	Q +stars
+	set stars = $piece( repository, "<span class=""octicon octicon-star ""></span>", 2 )	
+	set stars = $piece( stars, "</a>")
+	set stars = $zstrip( stars, "<>WC" )
+	Quit +stars
 ]]></Implementation>
 </Method>
 
@@ -304,10 +304,10 @@ Extract amount of forks
 <ClassMethod>1</ClassMethod>
 <FormalSpec>repository:%String</FormalSpec>
 <Implementation><![CDATA[
-	s forks = $p( repository, "<span class=""octicon octicon-git-branch ""></span>", 2 )	
-	s forks = $p( forks, "</a>")
-	s forks = $zstrip( forks, "<>WC" )
-	Q +forks
+	set forks = $piece( repository, "<span class=""octicon octicon-git-branch ""></span>", 2 )	
+	set forks = $piece( forks, "</a>")
+	set forks = $zstrip( forks, "<>WC" )
+	Quit +forks
 ]]></Implementation>
 </Method>
 
@@ -321,11 +321,11 @@ LightPivotTable</a>
 <ClassMethod>1</ClassMethod>
 <FormalSpec>repository:%String</FormalSpec>
 <Implementation><![CDATA[
-	s name = $p( repository, "<h3 class=""repo-list-name"">", 2 )	
-	s name = $p( name, "</a>")
-	s name = $p( name, ">",2)
-	s name = $zstrip( name, "<>WC" )
-	Q name
+	set name = $piece( repository, "<h3 class=""repo-list-name"">", 2 )	
+	set name = $piece( name, "</a>")
+	set name = $piece( name, ">",2)
+	set name = $zstrip( name, "<>WC" )
+	Quit name
 ]]></Implementation>
 </Method>
 
@@ -338,10 +338,10 @@ Lightweight pivot table representation for MDX2JSON source for InterSystems Cach
 <ClassMethod>1</ClassMethod>
 <FormalSpec>repository:%String</FormalSpec>
 <Implementation><![CDATA[
-	s description = $p( repository, "itemprop=""description"">", 2 )	
-	s description = $p( description, "</p>")
-	s description = $zstrip( description, "<>WC" )
-	Q description
+	set description = $piece( repository, "itemprop=""description"">", 2 )	
+	set description = $piece( description, "</p>")
+	set description = $zstrip( description, "<>WC" )
+	Quit description
 ]]></Implementation>
 </Method>
 
@@ -355,25 +355,25 @@ Updated <time datetime="2015-12-19T21:59:35Z" is="relative-time">Dec 19, 2015</t
 <ClassMethod>1</ClassMethod>
 <FormalSpec>repository:%String</FormalSpec>
 <Implementation><![CDATA[
-	s updated = $p( repository, "<time datetime=""", 2)
-	s updated = $p( updated, "Z""") ;2015-12-19T21:59:35
+	set updated = $piece( repository, "<time datetime=""", 2)
+	set updated = $piece( updated, "Z""") ;2015-12-19T21:59:35
 	
-	s date = $p( updated,"T"), date = $zstrip(date, "<>WC" ) ;2015-12-19
-	s time = $p( updated,"T",2), time = $zstrip(time, "<>WC" ) ;21:59:35
+	set date = $piece( updated,"T"), date = $zstrip(date, "<>WC" ) ;2015-12-19
+	set time = $piece( updated,"T",2), time = $zstrip(time, "<>WC" ) ;21:59:35
 	
-	s dateh = $zdh( date, 3) 
-	s timeh = $zth( time )
+	set dateh = $zdh( date, 3) 
+	set timeh = $zth( time )
 	
 	#; Making Moscow timezone, eg adding 3 hours
 	if timeh >= 75600{			;if time more than 21:00:00 
-		s timeh = timeh - 75600 ;minus 21 hours
-		s dateh = dateh + 1}
+		set timeh = timeh - 75600 ;minus 21 hours
+		set dateh = dateh + 1}
 	else{						;if time fewer than 21:00:00
-		s timeh = timeh + 10800	;plus 3 hours
+		set timeh = timeh + 10800	;plus 3 hours
 		}
 	
-	s ts = $zdt( dateh_","_timeh, 3 ) ;odbc timestamp
-	Q ts
+	set ts = $zdt( dateh_","_timeh, 3 ) ;odbc timestamp
+	Quit ts
 ]]></Implementation>
 </Method>
 
@@ -385,7 +385,7 @@ If handler return 0, parsing will be interrupted]]></Description>
 <Abstract>1</Abstract>
 <FormalSpec><![CDATA[&data]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[	Q 1
+<Implementation><![CDATA[	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -396,7 +396,7 @@ Example scan across all forum topic pages</Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec>organization="inersistems-ru"</FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[	Q 1
+<Implementation><![CDATA[	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -416,23 +416,23 @@ organization's table end</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 
-	s html = ..Html 
-	d html.Rewind()
+	set html = ..Html 
+	do html.Rewind()
 	
-	s pos = html.FindAt( 1, ..#OrganizationBegin ) 
+	set pos = html.FindAt( 1, ..#OrganizationBegin ) 
     if pos = -1 {
-	    s sc = $$$ERROR(,"Not found begin of organization's table") Q 0
+	    set sc = $$$ERROR(,"Not found begin of organization's table") Quit 0
     }
-    s pos = pos + $l( ..#OrganizationBegin )
+    set pos = pos + $length( ..#OrganizationBegin )
     
-    s end = html.FindAt( pos, ..#OrganizationEnd ) 
+    set end = html.FindAt( pos, ..#OrganizationEnd ) 
     if end = -1 {
-	    s sc = $$$ERROR(,"Not found end of organization's table") Q 0
+	    set sc = $$$ERROR(,"Not found end of organization's table") Quit 0
     }
 	
-	s sc = html.MoveTo( pos ) Q:'sc 0
-	s length = end - pos 
-	s organizationHtml = html.Read( .length )
+	set sc = html.MoveTo( pos ) Quit:'sc 0
+	set length = end - pos 
+	set organizationHtml = html.Read( .length )
 	
 	/*Example of organization content
 	<header class="org-header">
@@ -474,23 +474,23 @@ organization's table end</Description>
 	  </div>
 	</header>*/
 	
-    if $f(organizationHtml,"<h1 class=""org-name"">") {
-		s organization("FullName") = ..ParseOrgFullName(organizationHtml)
+    if $find(organizationHtml,"<h1 class=""org-name"">") {
+		set organization("FullName") = ..ParseOrgFullName(organizationHtml)
     	}
-    if $f(organizationHtml,"<p class=""org-description""") {
-		s organization("Description") = ..ParseOrgDescription(organizationHtml)
+    if $find(organizationHtml,"<p class=""org-description""") {
+		set organization("Description") = ..ParseOrgDescription(organizationHtml)
     	}
-    if $f(organizationHtml,"has-blog") {
-		s organization("OrgLink") = ..ParseOrgLink(organizationHtml)
+    if $find(organizationHtml,"has-blog") {
+		set organization("OrgLink") = ..ParseOrgLink(organizationHtml)
     	}
-    if $f(organizationHtml,"has-email") {
-		s organization("eMail") = ..ParseOrgEMail(organizationHtml)
+    if $find(organizationHtml,"has-email") {
+		set organization("eMail") = ..ParseOrgEMail(organizationHtml)
     	}
-    if $f(organizationHtml,"People") {
-	    s organization("People") = ..ParsePeople(organizationHtml)
+    if $find(organizationHtml,"People") {
+	    set organization("People") = ..ParsePeople(organizationHtml)
     	}
     	
-	Q ..OnOrganization( .organization )
+	Quit ..OnOrganization( .organization )
 ]]></Implementation>
 </Method>
 
@@ -503,11 +503,11 @@ Extract full name of organization
 <ClassMethod>1</ClassMethod>
 <FormalSpec>organization:%String</FormalSpec>
 <Implementation><![CDATA[
-	s name = $p( organization, "<h1 class=""org-name"">", 2 )	
-	s name = $p( name, "</span>")
-	s name = $p( name, "<span>",2)
-	s name = $zstrip( name, "<>WC" )
-	Q name
+	set name = $piece( organization, "<h1 class=""org-name"">", 2 )	
+	set name = $piece( name, "</span>")
+	set name = $piece( name, "<span>",2)
+	set name = $zstrip( name, "<>WC" )
+	Quit name
 ]]></Implementation>
 </Method>
 
@@ -518,10 +518,10 @@ Extract description of organization
 <ClassMethod>1</ClassMethod>
 <FormalSpec>organization:%String</FormalSpec>
 <Implementation><![CDATA[
-	s description = $p( organization, "itemprop=""description"">", 2 )	
-	s description = $p( description, "</p>")
-	s description = $zstrip( description, "<>WC" )
-	Q description
+	set description = $piece( organization, "itemprop=""description"">", 2 )	
+	set description = $piece( description, "</p>")
+	set description = $zstrip( description, "<>WC" )
+	Quit description
 ]]></Implementation>
 </Method>
 
@@ -535,11 +535,11 @@ Extract link of organization
 <ClassMethod>1</ClassMethod>
 <FormalSpec>organization:%String</FormalSpec>
 <Implementation><![CDATA[
-	s link = $p( organization, "octicon-link ""></span>", 2 )	
-	s link = $p( link, "</a>")
-	s link = $p( link, ">", 2)
-	s link = $zstrip( link, "<>WC" )
-	Q link
+	set link = $piece( organization, "octicon-link ""></span>", 2 )	
+	set link = $piece( link, "</a>")
+	set link = $piece( link, ">", 2)
+	set link = $zstrip( link, "<>WC" )
+	Quit link
 ]]></Implementation>
 </Method>
 
@@ -553,11 +553,11 @@ Extract eamil of organization
 <ClassMethod>1</ClassMethod>
 <FormalSpec>organization:%String</FormalSpec>
 <Implementation><![CDATA[
-	s eMail = $p( organization, "octicon-mail ""></span>", 2 )	
-	s eMail = $p( eMail, "</a>")
-	s eMail = $p( eMail, ">", 2)
-	s eMail = $zstrip( eMail, "<>WC" )
-	Q eMail
+	set eMail = $piece( organization, "octicon-mail ""></span>", 2 )	
+	set eMail = $piece( eMail, "</a>")
+	set eMail = $piece( eMail, ">", 2)
+	set eMail = $zstrip( eMail, "<>WC" )
+	Quit eMail
 ]]></Implementation>
 </Method>
 
@@ -572,11 +572,11 @@ People
 <ClassMethod>1</ClassMethod>
 <FormalSpec>organization:%String</FormalSpec>
 <Implementation><![CDATA[
-	s people = $p( organization, "People", 2 )	
-	s people = $p( people, "</span>")
-	s people = $p( people, ">", 2)
-	s people = $zstrip( people, "<>WC" )
-	Q +people
+	set people = $piece( organization, "People", 2 )	
+	set people = $piece( people, "</span>")
+	set people = $piece( people, ">", 2)
+	set people = $zstrip( people, "<>WC" )
+	Quit +people
 ]]></Implementation>
 </Method>
 
@@ -588,7 +588,7 @@ If handler return 0, parsing will be interrupted]]></Description>
 <Abstract>1</Abstract>
 <FormalSpec><![CDATA[&data]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[	Q 1
+<Implementation><![CDATA[	Quit 1
 ]]></Implementation>
 </Method>
 </Class>

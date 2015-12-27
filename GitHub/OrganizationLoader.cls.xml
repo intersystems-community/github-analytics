@@ -12,20 +12,20 @@ Entry point</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	if login'=""{
-		s sc = ##class(GitHub.Login).CreateLoggedSession(login,password,.session)
+		set sc = ##class(GitHub.Login).CreateLoggedSession(login,password,.session)
 		}
-	else{s session = ""}
+	else{set session = ""}
 	
-	w !,"Load Organization's properties",!
+	write !,"Load Organization's properties",!
 	,"And general properties of Organization's Repositories... ",!,!
-	s sc = ##class(GitHub.OrganizationLoader).Scan( organization, .session ) 
-	if 'sc w sc Q sc
+	set sc = ##class(GitHub.OrganizationLoader).Scan( organization, .session ) 
+	if 'sc write sc Quit sc
 	
-	w !,"Detail load Organization's Repositories ... "
-	s sc = ##class(GitHub.RepositoryDetailsLoader).Load( organization, .session ) 
-	if 'sc w sc Q sc
+	write !,"Detail load Organization's Repositories ... "
+	set sc = ##class(GitHub.RepositoryDetailsLoader).Load( organization, .session ) 
+	if 'sc write sc Quit sc
 	
-	Q sc
+	Quit sc
 ]]></Implementation>
 </Method>
 
@@ -37,11 +37,11 @@ Scan across one organization's page</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	
-	s page = ##class(GitHub.OrganizationLoader).GetPage( organization, 1, .sc, .session ) Q:'sc sc
+	set page = ##class(GitHub.OrganizationLoader).GetPage( organization, 1, .sc, .session ) Quit:'sc sc
 	
-	s sc = page.ParseOrganization() Q:'sc
+	set sc = page.ParseOrganization() Quit:'sc
 	
-	Q ##class(GitHub.RepositoriesLoader).Load( page )
+	Quit ##class(GitHub.RepositoriesLoader).Load( page )
 ]]></Implementation>
 </Method>
 
@@ -54,22 +54,22 @@ If handler return 0, parsing will be interrupted]]></Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	if ##class(GitHub.Organization).NameExists( ..Organization, .id ){
-		d ##class(GitHub.Organization).%DeleteId(id)
+		do ##class(GitHub.Organization).%DeleteId(id)
 		}
 	
-	s data("Name") = ..Organization
-	s data("FullName") = $g(data("FullName"))
-	s data("Description") = $g(data("Description"))
-	s data("OrgLink") = $g(data("OrgLink"))
-	s data("eMail") = $g(data("eMail"))
-	s data("People") = $g(data("People"))
+	set data("Name") = ..Organization
+	set data("FullName") = $get(data("FullName"))
+	set data("Description") = $get(data("Description"))
+	set data("OrgLink") = $get(data("OrgLink"))
+	set data("eMail") = $get(data("eMail"))
+	set data("People") = $get(data("People"))
 	
 
-	s sc = ##class(GitHub.Organization).Insert( .data ) 
+	set sc = ##class(GitHub.Organization).Insert( .data ) 
 
-	w ..Organization_" successfuly loaded - id "_$g(data),!,!
+	write ..Organization_" successfuly loaded - id "_$get(data),!,!
 	
-	Q sc
+	Quit sc
 ]]></Implementation>
 </Method>
 </Class>

@@ -46,8 +46,8 @@ Repository's name</Description>
 <ReturnType>%Status</ReturnType>
 <ServerOnly>1</ServerOnly>
 <Implementation><![CDATA[
-	s ..Organization = $g(organization)
-	s ..Repository = $g(repository)
+	set ..Organization = $get(organization)
+	set ..Repository = $get(repository)
 	Quit $$$OK
 ]]></Implementation>
 </Method>
@@ -72,10 +72,10 @@ Html content of current page</Description>
 getter</Description>
 <ReturnType>%Stream</ReturnType>
 <Implementation><![CDATA[
-	Q:'$IsObject(..request) ""
-	s strm = ##class(%Stream.FileCharacter).%New()
-	s sc = strm.CopyFrom( ..request.HttpResponse.Data )
-	Q strm
+	Quit:'$IsObject(..request) ""
+	set strm = ##class(%Stream.FileCharacter).%New()
+	set sc = strm.CopyFrom( ..request.HttpResponse.Data )
+	Quit strm
 ]]></Implementation>
 </Method>
 
@@ -85,13 +85,13 @@ Load page content from "github.com/{organization}/{repository}"</Description>
 <FormalSpec>organization="",repositiry=""</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	if $g(organization)'="" s ..Organization = organization
-	if $g(repositiry)'="" s ..Repository = repositiry
+	if $get(organization)'="" set ..Organization = organization
+	if $get(repositiry)'="" set ..Repository = repositiry
 	
 	
-	s sc = ..request.Get( ..Url() ) Q:'sc sc
+	set sc = ..request.Get( ..Url() ) Quit:'sc sc
 		
-	Q 1
+	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -102,27 +102,27 @@ Return repository's detail info page parser</Description>
 <FormalSpec><![CDATA[organization="intersystems-ru",repository="",&sc,&session]]></FormalSpec>
 <ReturnType>RepositoryPage</ReturnType>
 <Implementation><![CDATA[
-	s page = ..%New(organization, repository)
+	set page = ..%New(organization, repository)
 	
-	s page.request = ##class(%Net.HttpRequest).%New()
+	set page.request = ##class(%Net.HttpRequest).%New()
 	
-	s sslConfigName = ..#SERVER
-	s page.request.Server = sslConfigName
-	s sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
-		w !, "SSLConfig error: ", sc 	
+	set sslConfigName = ..#SERVER
+	set page.request.Server = sslConfigName
+	set sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
+		write !, "SSLConfig error: ", sc 	
 	}
-	s page.request.SSLConfiguration = sslConfigName
-	s page.request.Https=1
+	set page.request.SSLConfiguration = sslConfigName
+	set page.request.Https=1
 	
-	#define g(%prop) $g(session(%prop))	
-	if $d(session) {
-		s sc = page.request.InsertCookie($$$g("name"),$$$g("value"),$$$g("path"),..#SERVER,$$$g("expires"),$$$g("secure"))
+	#define g(%prop) $get(session(%prop))	
+	if $data(session) {
+		set sc = page.request.InsertCookie($$$g("name"),$$$g("value"),$$$g("path"),..#SERVER,$$$g("expires"),$$$g("secure"))
 		}
 		
-	s:repository'="" sc = page.Get() 
-	Q:'sc ""
+	set:repository'="" sc = page.Get() 
+	Quit:'sc ""
 	
-	Q page
+	Quit page
 ]]></Implementation>
 </Method>
 
@@ -134,7 +134,7 @@ If handler return 0, parsing will be interrupted]]></Description>
 <Abstract>1</Abstract>
 <FormalSpec><![CDATA[&data]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[	Q 1
+<Implementation><![CDATA[	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -145,7 +145,7 @@ Example scan across all forum topic pages</Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec><![CDATA[&data]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[	Q 1
+<Implementation><![CDATA[	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -153,33 +153,33 @@ Example scan across all forum topic pages</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 
-	s html = ..Html 
-	d html.Rewind()
+	set html = ..Html 
+	do html.Rewind()
 	
-	Q:html.FindAt(1, "<!-- /.empty-repo -->")'=-1 "Empty repo"
+	Quit:html.FindAt(1, "<!-- /.empty-repo -->")'=-1 "Empty repo"
 	
-	s pos = html.FindAt( 1, ..#DetailTableBegin ) 
+	set pos = html.FindAt( 1, ..#DetailTableBegin ) 
     if pos = -1 {
-	    s sc = $$$ERROR(,"Not found begin of repository detail info table") Q 0
+	    set sc = $$$ERROR(,"Not found begin of repository detail info table") Quit 0
     }
-    s pos = pos + $l( ..#DetailTableBegin )
+    set pos = pos + $length( ..#DetailTableBegin )
     
-    s end = html.FindAt( pos, ..#DetailTableEnd ) 
+    set end = html.FindAt( pos, ..#DetailTableEnd ) 
     if end = -1 {
-	    s sc = $$$ERROR(,"Not found end of repository detail info table") Q 0
+	    set sc = $$$ERROR(,"Not found end of repository detail info table") Quit 0
     }
 	
-	s sc = html.MoveTo( pos ) Q:'sc 0
-	s length = end - pos 
-	s detailInfoHtml = html.Read( .length )
+	set sc = html.MoveTo( pos ) Quit:'sc 0
+	set length = end - pos 
+	set detailInfoHtml = html.Read( .length )
 	
 	
-	s detailInfo("Watchers") = ..ParseWatchers(detailInfoHtml)
-	s detailInfo("Issues") = ..ParseIssues(detailInfoHtml)
+	set detailInfo("Watchers") = ..ParseWatchers(detailInfoHtml)
+	set detailInfo("Issues") = ..ParseIssues(detailInfoHtml)
 	
-	s detailInfo("Commits") = ..ParseStats(detailInfoHtml,1)
-	s detailInfo("Branches") = ..ParseStats(detailInfoHtml,2)
-	s detailInfo("Releases") = ..ParseStats(detailInfoHtml,3)
+	set detailInfo("Commits") = ..ParseStats(detailInfoHtml,1)
+	set detailInfo("Branches") = ..ParseStats(detailInfoHtml,2)
+	set detailInfo("Releases") = ..ParseStats(detailInfoHtml,3)
 	
 	//Amount of contributors might be in URI, that cointain only the following
 	//<a href="/intersystems-ru/LightPivotTable/graphs/contributors">
@@ -189,24 +189,24 @@ Example scan across all forum topic pages</Description>
 	//	</span>
 	//	contributors
 	//</a>
-	if $f(detailInfoHtml,"/contributors_size"">"){
-		s sc = ..request.Get(..Url()_"/contributors_size")
-		s tmpStrm = ##class(%Stream.FileCharacter).%New()
-		s sc = tmpStrm.CopyFrom( ..request.HttpResponse.Data )
-		s tmpHtml = tmpStrm.Read()
-		s detailInfo("Contributors") = ..ParseStats(tmpHtml,4)
-		k tmpHtml, tmpStrm
+	if $find(detailInfoHtml,"/contributors_size"">"){
+		set sc = ..request.Get(..Url()_"/contributors_size")
+		set tmpStrm = ##class(%Stream.FileCharacter).%New()
+		set sc = tmpStrm.CopyFrom( ..request.HttpResponse.Data )
+		set tmpHtml = tmpStrm.Read()
+		set detailInfo("Contributors") = ..ParseStats(tmpHtml,4)
+		kill tmpHtml, tmpStrm
 		}
 	else{
-		s detailInfo("Contributors") = ..ParseStats(detailInfoHtml,4)
+		set detailInfo("Contributors") = ..ParseStats(detailInfoHtml,4)
 		}
 		
-	if $f(detailInfoHtml,"<div class=""repository-lang-stats-graph") {
-		s sc = ..ParseLanguageDetails(detailInfoHtml, .languageDetails )
-		m detailInfo("LanguageDetails") = languageDetails
+	if $find(detailInfoHtml,"<div class=""repository-lang-stats-graph") {
+		set sc = ..ParseLanguageDetails(detailInfoHtml, .languageDetails )
+		merge detailInfo("LanguageDetails") = languageDetails
     	}
     	
-	Q ..OnDetailInfo( .detailInfo )
+	Quit ..OnDetailInfo( .detailInfo )
 ]]></Implementation>
 </Method>
 
@@ -222,10 +222,10 @@ Extract amount of watchers
 <ClassMethod>1</ClassMethod>
 <FormalSpec>detailInfoHtml:%String</FormalSpec>
 <Implementation><![CDATA[
-	s watchers = $p( detailInfoHtml, "/watchers"">", 2 )	
-	s watchers = $p( watchers, "</a>")
-	s watchers = $zstrip( watchers, "<>WC" )
-	Q +watchers
+	set watchers = $piece( detailInfoHtml, "/watchers"">", 2 )	
+	set watchers = $piece( watchers, "</a>")
+	set watchers = $zstrip( watchers, "<>WC" )
+	Quit +watchers
 ]]></Implementation>
 </Method>
 
@@ -238,11 +238,11 @@ Issues
 <ClassMethod>1</ClassMethod>
 <FormalSpec>detailInfoHtml:%String</FormalSpec>
 <Implementation><![CDATA[
-	s issues = $p( detailInfoHtml, "<span class=""octicon octicon-issue-opened "">", 2 )	
-	s issues = $p( issues, "</span>",2)
-	s issues = $p( issues, ">",2)
-	s issues = $zstrip( issues, "<>WC" )
-	Q +issues
+	set issues = $piece( detailInfoHtml, "<span class=""octicon octicon-issue-opened "">", 2 )	
+	set issues = $piece( issues, "</span>",2)
+	set issues = $piece( issues, ">",2)
+	set issues = $zstrip( issues, "<>WC" )
+	Quit +issues
 ]]></Implementation>
 </Method>
 
@@ -263,11 +263,11 @@ commits
 <ClassMethod>1</ClassMethod>
 <FormalSpec>detailInfoHtml:%String,iStat</FormalSpec>
 <Implementation><![CDATA[
-	s num = iStat + 1
-	s stats = $p( detailInfoHtml, "<span class=""num text-emphasized"">", num )	
-	s stats = $p( stats, "</span>")
-	s stats = $zstrip( stats, "<>WC" )
-	Q +stats		//Fetching contributors - sc.plugin, iknowSocial
+	set num = iStat + 1
+	set stats = $piece( detailInfoHtml, "<span class=""num text-emphasized"">", num )	
+	set stats = $piece( stats, "</span>")
+	set stats = $zstrip( stats, "<>WC" )
+	Quit +stats		//Fetching contributors - sc.plugin, iknowSocial
 ]]></Implementation>
 </Method>
 
@@ -286,20 +286,20 @@ Extract description of detailInfoHtml
 <FormalSpec>detailInfoHtml:%String,*languageDetails</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	s start = $f(detailInfoHtml, "<div class=""repository-lang-stats-graph")
-	s end = $f(detailInfoHtml, "</div>", start) - ($l("</div>")+1)
-	s languageDetailsHtml = $e(detailInfoHtml,start,end)
+	set start = $find(detailInfoHtml, "<div class=""repository-lang-stats-graph")
+	set end = $find(detailInfoHtml, "</div>", start) - ($length("</div>")+1)
+	set languageDetailsHtml = $extract(detailInfoHtml,start,end)
 	
-	s pos = $f(languageDetailsHtml,"<span class=""language-color""")
-	s num = 0
+	set pos = $find(languageDetailsHtml,"<span class=""language-color""")
+	set num = 0
 	while pos{
-		s num = num + 1
-		s pos = $f(languageDetailsHtml,"<span class=""language-color""",pos)
-		s languageDetails(num,"Language") = ..ParseLanguage(languageDetailsHtml, num)
-		s languageDetails(num,"Percent") = ..ParsePercent(languageDetailsHtml, num)
+		set num = num + 1
+		set pos = $find(languageDetailsHtml,"<span class=""language-color""",pos)
+		set languageDetails(num,"Language") = ..ParseLanguage(languageDetailsHtml, num)
+		set languageDetails(num,"Percent") = ..ParsePercent(languageDetailsHtml, num)
 		}
-	s languageDetails("Amount") = num
-	Q 1
+	set languageDetails("Amount") = num
+	Quit 1
 ]]></Implementation>
 </Method>
 
@@ -310,11 +310,11 @@ Extract language's name
 <ClassMethod>1</ClassMethod>
 <FormalSpec>languageDetailsHtml,num</FormalSpec>
 <Implementation><![CDATA[
-	s num = num + 1
-	s language = $p( languageDetailsHtml, "itemprop=""keywords"">", num)	
-	s language = $p( language, "</span>")
-	s language = $zstrip( language, "<>WC" )
-	Q language
+	set num = num + 1
+	set language = $piece( languageDetailsHtml, "itemprop=""keywords"">", num)	
+	set language = $piece( language, "</span>")
+	set language = $zstrip( language, "<>WC" )
+	Quit language
 ]]></Implementation>
 </Method>
 
@@ -325,11 +325,11 @@ Extract language's percent
 <ClassMethod>1</ClassMethod>
 <FormalSpec>languageDetailsHtml,num</FormalSpec>
 <Implementation><![CDATA[
-	s num = num + 1
-	s percent = $p( languageDetailsHtml, "style=""width:", num)	
-	s percent = $p( percent, "%")
-	s percent = $zstrip( percent, "<>WC" )
-	Q percent
+	set num = num + 1
+	set percent = $piece( languageDetailsHtml, "style=""width:", num)	
+	set percent = $piece( percent, "%")
+	set percent = $zstrip( percent, "<>WC" )
+	Quit percent
 ]]></Implementation>
 </Method>
 </Class>
