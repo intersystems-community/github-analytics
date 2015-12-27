@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.Organization">
+<Description>
+This class contain information about organization of repositories</Description>
+<Super>%Persistent</Super>
+<TimeCreated>63909,2427.981117</TimeCreated>
+
+<Property name="Name">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Index name="Name">
+<Properties>Name</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Property name="FullName">
+<Type>%String</Type>
+</Property>
+
+<Property name="eMail">
+<Type>%String</Type>
+</Property>
+
+<Property name="OrgLink">
+<Type>%String</Type>
+</Property>
+
+<Property name="Description">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="255"/>
+</Property>
+
+<Property name="Repositories">
+<Description>
+organization's repositories collection</Description>
+<Type>GitHub.Repository</Type>
+<Cardinality>many</Cardinality>
+<Inverse>Organization</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="People">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Link">
+<Description>
+url</Description>
+<Type>%String</Type>
+<Calculated>1</Calculated>
+<SqlComputeCode> s {*} = ##class(GitHub.Organization).GetLink({Name})</SqlComputeCode>
+<SqlComputed>1</SqlComputed>
+</Property>
+
+<Method name="GetLink">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>name</FormalSpec>
+<Implementation><![CDATA[$S(name'="":"https://github.com/"_name,1:"")
+]]></Implementation>
+</Method>
+
+<Method name="Insert">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	&sql(
+		Insert Into Github.Organization (Name, FullName, eMail, OrgLink, Description, People) 
+		Values ( :data("Name"), :data("FullName"), :data("eMail")
+		, :data("OrgLink"), :data("Description"), :data("People") )
+	)
+	if SQLCODE=0 {
+		s data=%ROWID Q 1
+	}
+	Q $$$ERROR(,$system.SQL.SQLCODE( SQLCODE ))
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^GitHub.OrganizationD</DataLocation>
+<DefaultData>OrganizationDefaultData</DefaultData>
+<IdLocation>^GitHub.OrganizationD</IdLocation>
+<IndexLocation>^GitHub.OrganizationI</IndexLocation>
+<StreamLocation>^GitHub.OrganizationS</StreamLocation>
+<Data name="OrganizationDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Name</Value>
+</Value>
+<Value name="3">
+<Value>FullName</Value>
+</Value>
+<Value name="4">
+<Value>eMail</Value>
+</Value>
+<Value name="5">
+<Value>OrgLink</Value>
+</Value>
+<Value name="6">
+<Value>Description</Value>
+</Value>
+<Value name="7">
+<Value>People</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.RepositoriesLoader">
+<Super>GitHub.OrganizationPage</Super>
+<TimeCreated>63909,16899.230917</TimeCreated>
+
+<Method name="Load">
+<Description>
+Load repositories of organization</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>page</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	Q ##class(GitHub.RepositoriesLoader).Scan( page )
+]]></Implementation>
+</Method>
+
+<Method name="Scan">
+<Description>
+Scan across all organization's pages</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>page</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	s sc = 1, i = 1 
+
+	s pages = page.Pages() Q:pages=0 $$$ERROR($$$GeneralError,"Can't parse pages count ") 
+	
+	while i <= pages {
+		
+		s sc = page.Parse() Q:'sc
+		w !, "Page of repositories #", i, " successfuly loaded", !
+		s i = i + 1, sc = page.Get( , i ) ;load next page #i in parser  
+		Q:'sc 
+		}
+	Q sc
+]]></Implementation>
+</Method>
+
+<Method name="OnRepository">
+<Description><![CDATA[
+Event handler 
+<var>data</var> - key-value array with repository properties 
+If handler return 0, parsing will be interrupted]]></Description>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	Q:'##class(GitHub.Organization).NameExists( ..Organization, .organizationId ) 0
+	s data("Organization") = organizationId
+	s data("Link") = "https://github.com/"_..Organization_"/"_$g(data("Name"))
+	
+	s sc = ##class(GitHub.Repository).Insert( .data ) 
+
+	w $g(data), " " ;output repository id
+	
+	Q sc
+]]></Implementation>
+</Method>
+</Class>
+</Export>

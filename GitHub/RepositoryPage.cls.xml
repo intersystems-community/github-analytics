@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.RepositoryPage">
+<Description><![CDATA[
+Page github.com/<var>organization<var>/<var>repository<var> with detail repository info]]></Description>
+<Super>%RegisteredObject</Super>
+<TimeCreated>63913,80285.795625</TimeCreated>
+
+<Parameter name="SERVER">
+<Description>
+Repositories imported from</Description>
+<Default>github.com</Default>
+</Parameter>
+
+<Parameter name="DetailTableBegin">
+<Description>
+repository's detail info table begin</Description>
+<Default><![CDATA[<ul class="pagehead-actions">]]></Default>
+</Parameter>
+
+<Parameter name="DetailTableEnd">
+<Description>
+repository's detail info table end</Description>
+<Default><![CDATA[<div class="file-navigation in-mid-page file-navigation-new">]]></Default>
+</Parameter>
+
+<Property name="request">
+<Type>%Net.HttpRequest</Type>
+<Private>1</Private>
+</Property>
+
+<Property name="Organization">
+<Description>
+Organization's name</Description>
+<InitialExpression>"intersystems-ru"</InitialExpression>
+</Property>
+
+<Property name="Repository">
+<Description>
+Repository's name</Description>
+</Property>
+
+<Method name="%OnNew">
+<FormalSpec>organization,repository</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<ServerOnly>1</ServerOnly>
+<Implementation><![CDATA[
+	s ..Organization = $g(organization)
+	s ..Repository = $g(repository)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="Url">
+<Description>
+Build url path for current page</Description>
+<CodeMode>expression</CodeMode>
+<Implementation><![CDATA["/"_..Organization_"/"_..Repository
+]]></Implementation>
+</Method>
+
+<Property name="Html">
+<Description>
+Html content of current page</Description>
+<Type>%Stream.FileCharacter</Type>
+<ReadOnly>1</ReadOnly>
+</Property>
+
+<Method name="HtmlGet">
+<Description>
+getter</Description>
+<ReturnType>%Stream</ReturnType>
+<Implementation><![CDATA[
+	Q:'$IsObject(..request) ""
+	s strm = ##class(%Stream.FileCharacter).%New()
+	s sc = strm.CopyFrom( ..request.HttpResponse.Data )
+	Q strm
+]]></Implementation>
+</Method>
+
+<Method name="Get">
+<Description>
+Load page content from "github.com/{organization}/{repository}"</Description>
+<FormalSpec>organization="",repositiry=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if $g(organization)'="" s ..Organization = organization
+	if $g(repositiry)'="" s ..Repository = repositiry
+	
+	
+	s sc = ..request.Get( ..Url() ) Q:'sc sc
+		
+	Q 1
+]]></Implementation>
+</Method>
+
+<Method name="GetPage">
+<Description>
+Return repository's detail info page parser</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[organization="intersystems-ru",repository="",&sc,&session]]></FormalSpec>
+<ReturnType>RepositoryPage</ReturnType>
+<Implementation><![CDATA[
+	s page = ..%New(organization, repository)
+	
+	s page.request = ##class(%Net.HttpRequest).%New()
+	
+	s sslConfigName = ..#SERVER
+	s page.request.Server = sslConfigName
+	s sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
+		w !, "SSLConfig error: ", sc 	
+	}
+	s page.request.SSLConfiguration = sslConfigName
+	s page.request.Https=1
+	
+	#define g(%prop) $g(session(%prop))	
+	if $d(session) {
+		s sc = page.request.InsertCookie($$$g("name"),$$$g("value"),$$$g("path"),..#SERVER,$$$g("expires"),$$$g("secure"))
+		}
+		
+	s:repository'="" sc = page.Get() 
+	Q:'sc ""
+	
+	Q page
+]]></Implementation>
+</Method>
+
+<Method name="OnDetailInfo">
+<Description><![CDATA[
+Event handler 
+<var>data</var> - key-value array with repository's detail properties 
+If handler return 0, parsing will be interrupted]]></Description>
+<Abstract>1</Abstract>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	Q 1
+]]></Implementation>
+</Method>
+
+<Method name="Scan">
+<Description>
+Example scan across all forum topic pages</Description>
+<Abstract>1</Abstract>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	Q 1
+]]></Implementation>
+</Method>
+
+<Method name="ParseDetailInfo">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+
+	s html = ..Html 
+	d html.Rewind()
+	
+	Q:html.FindAt(1, "<!-- /.empty-repo -->")'=-1 "Empty repo"
+	
+	s pos = html.FindAt( 1, ..#DetailTableBegin ) 
+    if pos = -1 {
+	    s sc = $$$ERROR(,"Not found begin of repository detail info table") Q 0
+    }
+    s pos = pos + $l( ..#DetailTableBegin )
+    
+    s end = html.FindAt( pos, ..#DetailTableEnd ) 
+    if end = -1 {
+	    s sc = $$$ERROR(,"Not found end of repository detail info table") Q 0
+    }
+	
+	s sc = html.MoveTo( pos ) Q:'sc 0
+	s length = end - pos 
+	s detailInfoHtml = html.Read( .length )
+	
+	
+	s detailInfo("Watchers") = ..ParseWatchers(detailInfoHtml)
+	s detailInfo("Issues") = ..ParseIssues(detailInfoHtml)
+	
+	s detailInfo("Commits") = ..ParseStats(detailInfoHtml,1)
+	s detailInfo("Branches") = ..ParseStats(detailInfoHtml,2)
+	s detailInfo("Releases") = ..ParseStats(detailInfoHtml,3)
+	
+	//Amount of contributors might be in URI, that cointain only the following
+	//<a href="/intersystems-ru/LightPivotTable/graphs/contributors">
+	//	<span class="octicon octicon-organization "></span>
+	//	<span class="num text-emphasized">
+	//		2
+	//	</span>
+	//	contributors
+	//</a>
+	if $f(detailInfoHtml,"/contributors_size"">"){
+		s sc = ..request.Get(..Url()_"/contributors_size")
+		s tmpStrm = ##class(%Stream.FileCharacter).%New()
+		s sc = tmpStrm.CopyFrom( ..request.HttpResponse.Data )
+		s tmpHtml = tmpStrm.Read()
+		s detailInfo("Contributors") = ..ParseStats(tmpHtml,4)
+		k tmpHtml, tmpStrm
+		}
+	else{
+		s detailInfo("Contributors") = ..ParseStats(detailInfoHtml,4)
+		}
+		
+	if $f(detailInfoHtml,"<div class=""repository-lang-stats-graph") {
+		s sc = ..ParseLanguageDetails(detailInfoHtml, .languageDetails )
+		m detailInfo("LanguageDetails") = languageDetails
+    	}
+    	
+	Q ..OnDetailInfo( .detailInfo )
+]]></Implementation>
+</Method>
+
+<Method name="ParseWatchers">
+<Description><![CDATA[
+Extract amount of watchers
+<span class="octicon octicon-eye"></span>
+   Watch
+ </a>
+ <a class="social-count" href="/python/pythondotorg/watchers">
+   75
+ </a>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>detailInfoHtml:%String</FormalSpec>
+<Implementation><![CDATA[
+	s watchers = $p( detailInfoHtml, "/watchers"">", 2 )	
+	s watchers = $p( watchers, "</a>")
+	s watchers = $zstrip( watchers, "<>WC" )
+	Q +watchers
+]]></Implementation>
+</Method>
+
+<Method name="ParseIssues">
+<Description><![CDATA[
+Extract amount of issues
+<span class="octicon octicon-issue-opened "></span>
+Issues
+<span class="counter">127</span>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>detailInfoHtml:%String</FormalSpec>
+<Implementation><![CDATA[
+	s issues = $p( detailInfoHtml, "<span class=""octicon octicon-issue-opened "">", 2 )	
+	s issues = $p( issues, "</span>",2)
+	s issues = $p( issues, ">",2)
+	s issues = $zstrip( issues, "<>WC" )
+	Q +issues
+]]></Implementation>
+</Method>
+
+<Method name="ParseStats">
+<Description><![CDATA[
+Extract amount of commits(i = 1), branches(i = 2), releases(i = 3), contributors(i = 4)
+Number of this four stats starts after "<span class="num text-emphasized">"
+Example on commits
+<li class="commits">
+<a data-pjax href="/python/pythondotorg/commits/master">
+<span class="octicon octicon-history "></span>
+<span class="num text-emphasized">
+1,349
+</span>
+commits
+</a>
+</li>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>detailInfoHtml:%String,iStat</FormalSpec>
+<Implementation><![CDATA[
+	s num = iStat + 1
+	s stats = $p( detailInfoHtml, "<span class=""num text-emphasized"">", num )	
+	s stats = $p( stats, "</span>")
+	s stats = $zstrip( stats, "<>WC" )
+	Q +stats		//Fetching contributors - sc.plugin, iknowSocial
+]]></Implementation>
+</Method>
+
+<Method name="ParseLanguageDetails">
+<Description><![CDATA[
+Extract description of detailInfoHtml
+<div class="repository-lang-stats-graph js-toggle-lang-stats" title="Click for language details">
+   <span class="language-color" aria-label="Python 30.4%" style="width:30.4%; background-color:#3572A5;" itemprop="keywords">Python</span>
+   <span class="language-color" aria-label="HTML 28.1%" style="width:28.1%; background-color:#e44b23;" itemprop="keywords">HTML</span>
+   <span class="language-color" aria-label="JavaScript 24.5%" style="width:24.5%; background-color:#f1e05a;" itemprop="keywords">JavaScript</span>
+   <span class="language-color" aria-label="CSS 15.3%" style="width:15.3%; background-color:#563d7c;" itemprop="keywords">CSS</span>
+   <span class="language-color" aria-label="PostScript 1.5%" style="width:1.5%; background-color:#ccc;" itemprop="keywords">PostScript</span>
+   <span class="language-color" aria-label="Ruby 0.2%" style="width:0.2%; background-color:#701516;" itemprop="keywords">Ruby</span>
+</div>	]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>detailInfoHtml:%String,*languageDetails</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s start = $f(detailInfoHtml, "<div class=""repository-lang-stats-graph")
+	s end = $f(detailInfoHtml, "</div>", start) - ($l("</div>")+1)
+	s languageDetailsHtml = $e(detailInfoHtml,start,end)
+	
+	s pos = $f(languageDetailsHtml,"<span class=""language-color""")
+	s num = 0
+	while pos{
+		s num = num + 1
+		s pos = $f(languageDetailsHtml,"<span class=""language-color""",pos)
+		s languageDetails(num,"Language") = ..ParseLanguage(languageDetailsHtml, num)
+		s languageDetails(num,"Percent") = ..ParsePercent(languageDetailsHtml, num)
+		}
+	s languageDetails("Amount") = num
+	Q 1
+]]></Implementation>
+</Method>
+
+<Method name="ParseLanguage">
+<Description><![CDATA[
+Extract language's name
+<span class="language-color" aria-label="Python 30.4%" style="width:30.4%; background-color:#3572A5;" itemprop="keywords">Python</span>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>languageDetailsHtml,num</FormalSpec>
+<Implementation><![CDATA[
+	s num = num + 1
+	s language = $p( languageDetailsHtml, "itemprop=""keywords"">", num)	
+	s language = $p( language, "</span>")
+	s language = $zstrip( language, "<>WC" )
+	Q language
+]]></Implementation>
+</Method>
+
+<Method name="ParsePercent">
+<Description><![CDATA[
+Extract language's percent
+<span class="language-color" aria-label="Python 30.4%" style="width:30.4%; background-color:#3572A5;" itemprop="keywords">Python</span>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>languageDetailsHtml,num</FormalSpec>
+<Implementation><![CDATA[
+	s num = num + 1
+	s percent = $p( languageDetailsHtml, "style=""width:", num)	
+	s percent = $p( percent, "%")
+	s percent = $zstrip( percent, "<>WC" )
+	Q percent
+]]></Implementation>
+</Method>
+</Class>
+</Export>

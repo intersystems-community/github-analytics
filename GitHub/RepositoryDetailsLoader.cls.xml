@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.RepositoryDetailsLoader">
+<Super>GitHub.RepositoryPage</Super>
+<TimeCreated>63913,80677.246571</TimeCreated>
+
+<Method name="Load">
+<Description><![CDATA[
+Load detail information of repository with Name <var>data("Repository")</var>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[organization,&session]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	Q ..Scan(organization,.session)
+]]></Implementation>
+</Method>
+
+<Method name="Scan">
+<Description>
+scan all organization's repository pages</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[organization,&session]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	s page = ..GetPage(organization,,.sc,.session ) Q:'sc sc
+
+	s sql = "Select Name From GitHub.Repository Where Organization->Name = ? "
+	s rs = ##class(%SQL.Statement).%ExecDirect(,sql, organization)
+	s sc = 1, num = 0
+	while rs.%Next(){
+		s num = num + 1
+		s repository = rs.Name
+		w !,num,".Repository ", repository
+		
+		s sc = page.Get(organization, repository) ;load repository page
+		s sc = page.ParseDetailInfo()
+		if sc="Empty repo"{
+			w " - Empty repository."
+			s sc = 1
+			Continue
+			}
+		Q:'sc 
+		
+		#; Adding history
+		Q:'##class(GitHub.Repository).NameExists( page.Repository, .repositoryId )
+		#; Commits
+		s sc = page.GetActivityData("/graphs/commit-activity-data", .commitsHistoryHtml)
+		if sc = "html"{
+			w !, "Have no access to history of commits data"
+			s sc = 1
+			}
+		else{
+			s sc = ##class(History.Commits).ParseCommitsHistory(commitsHistoryHtml, .data)
+			
+			s data("RepositoryId") = repositoryId
+			s sc = ##class(History.Commits).Insert(.data)
+			
+			w:sc !,"History of commits successfuly loaded"
+			Q:'sc
+			}
+			
+		#; Views
+		s sc = page.GetActivityData("/graphs/traffic-data", .viewsHistoryHtml)
+		if sc = "html"{
+			w !, "Have no access to history of views and clones data"
+			s sc = 1
+			Continue
+			}
+		else{
+			s sc = ##class(History.Views).ParseViewsHistory(viewsHistoryHtml, .data)
+			
+			s data("RepositoryId") = repositoryId
+			s sc = ##class(History.Views).Insert(.data)
+			
+			w:sc !,"History of views successfuly loaded"
+			Q:'sc
+			}
+			
+		#; Clones
+		s sc = page.GetActivityData("/graphs/clone-activity-data", .clonesHistoryHtml) Q:'sc
+		
+		s sc = ##class(History.Clones).ParseClonesHistory(clonesHistoryHtml, .data)
+		
+		s data("RepositoryId") = repositoryId
+		s sc = ##class(History.Clones).Insert(.data)
+		
+		w:sc !,"History of clones successfuly loaded"
+		Q:'sc
+		}
+	
+	Q sc
+]]></Implementation>
+</Method>
+
+<Method name="GetActivityData">
+<FormalSpec><![CDATA[activityUrl:%String,&html]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s sc = ..request.SetHeader("x-requested-with","XMLHttpRequest")
+	s sc = ..request.Get(..Url()_activityUrl)
+	s tmpStrm = ##class(%Stream.FileCharacter).%New()
+	s sc = tmpStrm.CopyFrom( ..request.HttpResponse.Data )
+	s html = tmpStrm.Read()
+	Q:$f(html,"<!DOCTYPE html>") "html"
+	k tmpStrm
+	Q sc
+]]></Implementation>
+</Method>
+
+<Method name="OnDetailInfo">
+<Description><![CDATA[
+Event handler 
+<var>data</var> - key-value array with repository's detail properties 
+If handler return 0, parsing will be interrupted]]></Description>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Q:'##class(GitHub.Repository).NameExists( ..Repository, .repositoryId ) 0
+	s data("Id") = repositoryId
+	s sc = ##class(GitHub.Repository).UpdateFromRepositoryPage( .data ) Q:'sc sc
+	w "." 
+	Q sc
+]]></Implementation>
+</Method>
+</Class>
+</Export>

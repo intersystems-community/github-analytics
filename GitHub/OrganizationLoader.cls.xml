@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.OrganizationLoader">
+<Super>GitHub.RepositoriesLoader</Super>
+<TimeCreated>63909,21330.155873</TimeCreated>
+
+<Method name="Load">
+<Description>
+Entry point</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>organization="intersystems-ru",login="",password=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if login'=""{
+		s sc = ##class(GitHub.Login).CreateLoggedSession(login,password,.session)
+		}
+	else{s session = ""}
+	
+	w !,"Load Organization's properties",!
+	,"And general properties of Organization's Repositories... ",!,!
+	s sc = ##class(GitHub.OrganizationLoader).Scan( organization, .session ) 
+	if 'sc w sc Q sc
+	
+	w !,"Detail load Organization's Repositories ... "
+	s sc = ##class(GitHub.RepositoryDetailsLoader).Load( organization, .session ) 
+	if 'sc w sc Q sc
+	
+	Q sc
+]]></Implementation>
+</Method>
+
+<Method name="Scan">
+<Description>
+Scan across one organization's page</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[organization="intersystems-ru",&session]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	s page = ##class(GitHub.OrganizationLoader).GetPage( organization, 1, .sc, .session ) Q:'sc sc
+	
+	s sc = page.ParseOrganization() Q:'sc
+	
+	Q ##class(GitHub.RepositoriesLoader).Load( page )
+]]></Implementation>
+</Method>
+
+<Method name="OnOrganization">
+<Description><![CDATA[
+Event handler 
+<var>data</var> - key-value array with organization properties 
+If handler return 0, parsing will be interrupted]]></Description>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if ##class(GitHub.Organization).NameExists( ..Organization, .id ){
+		d ##class(GitHub.Organization).%DeleteId(id)
+		}
+	
+	s data("Name") = ..Organization
+	s data("FullName") = $g(data("FullName"))
+	s data("Description") = $g(data("Description"))
+	s data("OrgLink") = $g(data("OrgLink"))
+	s data("eMail") = $g(data("eMail"))
+	s data("People") = $g(data("People"))
+	
+
+	s sc = ##class(GitHub.Organization).Insert( .data ) 
+
+	w ..Organization_" successfuly loaded - id "_$g(data),!,!
+	
+	Q sc
+]]></Implementation>
+</Method>
+</Class>
+</Export>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="SSL.Configuration">
+<Super>%RegisteredObject</Super>
+<TimeCreated>63909,4410.532062</TimeCreated>
+
+<Method name="SSLConfig">
+<Description>
+Check or create default ssl config</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>config="github.com"</FormalSpec>
+<Implementation><![CDATA[
+	/// Quit with namespace restoring
+	#define QUIT s $namespace = ns Q sc
+	
+	s ns = $namespace,  $namespace = "%SYS"
+	s sc = ##class(Security.SSLConfigs).Exists( config ) if sc $$$QUIT
+	
+	s config("CAFile")=""
+	s config("CAPath")=""
+	s config("CRLFile")=""
+	s config("CertificateFile")=""
+	s config("CipherList")="ALL:!aNULL:!eNULL:!EXP:!SSLv2"
+	s config("Description")=""
+	s config("Enabled")=1
+	s config("PrivateKeyFile")=""
+	s config("PrivateKeyPassword")=""
+	s config("PrivateKeyType")=2
+	s config("Protocols")=7
+	s config("Type")=0
+	s config("VerifyDepth")=9
+	s config("VerifyPeer")=0
+	
+ 	s sc = ##class(Security.SSLConfigs).Create( config, .config ) 
+ 	if 'sc $$$QUIT
+ 	s ssl = ##class(Security.SSLConfigs).%OpenId( config, ,.sc )
+ 	if 'sc $$$QUIT
+ 	s sc = ssl.Activate()
+ 	
+ 	$$$QUIT
+]]></Implementation>
+</Method>
+</Class>
+</Export>

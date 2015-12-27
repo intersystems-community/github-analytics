@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="History.Views">
+<Super>%Persistent</Super>
+<TimeCreated>63913,83016.197951</TimeCreated>
+
+<Property name="Repository">
+<Type>GitHub.Repository</Type>
+<Cardinality>one</Cardinality>
+<Inverse>HistoryViews</Inverse>
+<Relationship>1</Relationship>
+<Required>1</Required>
+<OnDelete>cascade</OnDelete>
+</Property>
+
+<Property name="Amount">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="UniqueVisitors">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Date">
+<Type>%TimeStamp</Type>
+<SqlFieldName>DateOfData</SqlFieldName>
+</Property>
+
+<Method name="ParseViewsHistory">
+<Description>
+Extract date and amount of views
+{"counts":[{"bucket":1451174400,"total":14,"unique":3}...{"bucket":1450051200,"total":8,"unique":1}],"summary":{"total":258,"unique":20}}</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[html:%String,&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s pos = $f(html,"bucket"":"), num = 0, pos = 1
+	while $f(html,"bucket"":",pos){
+		s num = num + 1
+		s pos = $f(html,"bucket"":",pos), end = $f(html,",",pos)-($l(",")+1)
+		s data(num,"date") = $e(html,pos,end)
+		s pos = $f(html,"total"":",pos), end = $f(html,",",pos)-($l(",")+1)
+		s data(num,"amount") = $e(html,pos,end)
+		s pos = $f(html,"unique"":",pos), end = $f(html,"}",pos)-($l("}")+1)
+		s data(num,"unique") = $e(html,pos,end)
+		}
+
+	Q 1
+]]></Implementation>
+</Method>
+
+<Method name="Insert">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+
+	s start = 4070908800, secondsPerDay = 86400, sc = 1
+	//$zd((start+date)/86400) = date of sunday - first day of week
+	//End of week is saturday, date is seconds from <var>start<var>
+	//86400 - senonds in 24 hours
+	s num = 1
+	while $d(data(num,("date"))){
+		if ((start+data(num,"date"))\secondsPerDay)>=(+$h){
+			s num = num + 1
+			Continue
+			}
+		s dateInternal = $zdt((start+data(num,"date"))\secondsPerDay,3)
+		s amount = data(num,"amount")
+		s unique = data(num,"unique")
+		&sql(Insert Into History.Views (Repository, Amount, UniqueVisitors, DateOfData)
+			Values (:data("RepositoryId"), :amount, :unique, :dateInternal))
+		s sc = sc!SQLCODE
+		Q:SQLCODE
+		s num = num + 1
+	}
+	k data
+	Q sc
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^History.ViewsD</DataLocation>
+<DefaultData>ViewsDefaultData</DefaultData>
+<IdLocation>^History.ViewsD</IdLocation>
+<IndexLocation>^History.ViewsI</IndexLocation>
+<StreamLocation>^History.ViewsS</StreamLocation>
+<Data name="ViewsDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Repository</Value>
+</Value>
+<Value name="3">
+<Value>Amount</Value>
+</Value>
+<Value name="4">
+<Value>Date</Value>
+</Value>
+<Value name="5">
+<Value>Unique</Value>
+</Value>
+<Value name="6">
+<Value>UniqueVisitors</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

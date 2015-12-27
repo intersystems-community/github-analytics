@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="History.Commits">
+<Super>%Persistent</Super>
+<TimeCreated>63911,35415.804336</TimeCreated>
+
+<Property name="Repository">
+<Type>GitHub.Repository</Type>
+<Cardinality>one</Cardinality>
+<Inverse>HistoryCommits</Inverse>
+<Relationship>1</Relationship>
+<Required>1</Required>
+<OnDelete>cascade</OnDelete>
+</Property>
+
+<Property name="Amount">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Date">
+<Type>%TimeStamp</Type>
+<SqlFieldName>DateOfData</SqlFieldName>
+</Property>
+
+<Method name="ParseCommitsHistory">
+<Description>
+Extract date and amount of commits
+[{"days":[0,0,0,0,0,0,0],"total":0,"week":1419728400}...{"days":[0,0,0,0,0,0,0],"total":0,"week":1450569600}]</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[html:%String,&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s dateFirstStart = $f(html,"""week"":"), dateFirstEnd = $f(html,"}",dateFirstStart)-($l("}")+1)
+	s data("FirstDate") = $e(html,dateFirstStart,dateFirstEnd)
+	s pos = $f(html,"days"), commits = ""
+	while $f(html,"days",pos){
+		s pos = $f(html,"[",pos), daysEnd = $f(html,"]",pos)-($l("]")+1)
+		s commits = commits_","_$e(html,pos,daysEnd)
+		}
+	
+	s num = 0, pos = 1
+	while $f(commits,",",pos){
+		s pos = $f(commits,",",pos), num = num + 1
+		s data(num) = $p(commits, ",", (num+1))
+		}
+
+	Q 1
+]]></Implementation>
+</Method>
+
+<Method name="Insert">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+
+	s start = 4070908800, secondsPerDay = 86400, sc = 1
+	//$zd((start+date)/86400) = date of sunday - first day of week
+	//End of week is saturday, date is seconds from <var>start<var>
+	//86400 - senonds in 24 hours
+	s num = 1, dateExternal = data("FirstDate")-secondsPerDay
+	while $d(data(num)){
+		s dateExternal = dateExternal + secondsPerDay
+		Q:((start+dateExternal)\secondsPerDay)>=(+$h) 
+		s dateInternal = $zdt((start+dateExternal)\secondsPerDay,3)
+		s commits = data(num)
+		&sql(Insert Into History.Commits (Repository, Amount, DateOfData)
+			Values (:data("RepositoryId"), :commits, :dateInternal))
+		s sc = sc!SQLCODE
+		Q:SQLCODE
+		s num = num + 1
+	}
+	k data
+	Q sc
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^History.CommitsD</DataLocation>
+<DefaultData>CommitsDefaultData</DefaultData>
+<IdLocation>^History.CommitsD</IdLocation>
+<IndexLocation>^History.CommitsI</IndexLocation>
+<StreamLocation>^History.CommitsS</StreamLocation>
+<Data name="CommitsDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Amount</Value>
+</Value>
+<Value name="3">
+<Value>Date</Value>
+</Value>
+<Value name="4">
+<Value>Repository</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

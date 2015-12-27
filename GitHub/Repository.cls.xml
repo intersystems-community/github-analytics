@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.Repository">
+<Description>
+This class contain information about repositories</Description>
+<Super>%Persistent</Super>
+<TimeCreated>63909,2460.601555</TimeCreated>
+
+<Property name="Name">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Index name="Name">
+<Properties>Name</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Property name="HistoryCommits">
+<Type>History.Commits</Type>
+<Cardinality>many</Cardinality>
+<Inverse>Repository</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="HistoryViews">
+<Type>History.Views</Type>
+<Cardinality>many</Cardinality>
+<Inverse>Repository</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="HistoryClones">
+<Type>History.Clones</Type>
+<Cardinality>many</Cardinality>
+<Inverse>Repository</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="Organization">
+<Type>GitHub.Organization</Type>
+<Cardinality>one</Cardinality>
+<Inverse>Repositories</Inverse>
+<Relationship>1</Relationship>
+<Required>1</Required>
+<OnDelete>cascade</OnDelete>
+</Property>
+
+<Property name="Type">
+<Type>%String</Type>
+</Property>
+
+<Property name="Stars">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Forks">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Link">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="255"/>
+</Property>
+
+<Property name="Watchers">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="IssuesOpened">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="IssuesClosed">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Description">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="255"/>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="Updated">
+<Type>%TimeStamp</Type>
+</Property>
+
+<Property name="Commits">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Branches">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Releases">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Contributors">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="LanguageDetails">
+<Type>%String</Type>
+<Collection>array</Collection>
+</Property>
+
+<Method name="Insert">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+#;	s obj = ##class(GitHub.Repository).%New()
+#;	s obj.Description = data("Description"), obj.Forks = data("Forks")
+#;	, obj.Link = data("Link"), obj.Name = data("Name"), obj.Organization = data("Organization")
+#;	,obj.Stars = data("Stars"), obj.Updated = data("Updated")
+#;	
+#;	s sc = obj.%Save()
+#;	d:'sc $system.Status.DisplayError(sc)
+#;	s data = obj.%Id()
+#;	k obj
+#;	Q 1
+	
+	&sql(
+		Insert Into GitHub.Repository (Organization, Type, Name, Stars, Forks, Link, Updated, Description)
+		Values (
+			:data("Organization"), :data("Type"), :data("Name"), :data("Stars"), :data("Forks")
+			, :data("Link"), :data("Updated"), :data("Description")
+		)
+	)
+	if SQLCODE=0 {
+		s data = %ROWID Q 1	
+	}
+	
+	Q $$$ERROR(,$system.SQL.SQLCODE(SQLCODE))
+]]></Implementation>
+</Method>
+
+<Method name="UpdateFromRepositoryPage">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<Implementation><![CDATA[
+	&sql( Update GitHub.Repository 
+		Set Watchers = :data("Watchers"), IssuesOpened = :data("Issues")
+		, Commits = :data("Commits"), Branches = :data("Branches")
+		, Releases = :data("Releases"), Contributors = :data("Contributors")
+		Where Id =:data("Id") 
+	)
+	Q:SQLCODE 0
+	
+	Q:'$d(data("LanguageDetails","Amount")) 1
+	Q:data("LanguageDetails","Amount")=0 $$$ERROR($$$GeneralError,"Amount of languages = 0") 
+	
+	s repositoryObj = ##class(GitHub.Repository).%OpenId(data("Id"))
+	s amount = data("LanguageDetails","Amount"), i = 1
+	while i<=amount{
+		s sc = repositoryObj.LanguageDetails.SetAt(data("LanguageDetails",i,"Percent"),data("LanguageDetails",i,"Language"))
+		Q:'sc
+		s i = i + 1
+		}
+	Q:'sc sc
+	s sc = repositoryObj.%Save()
+	Q sc
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^GitHub.RepositoryD</DataLocation>
+<DefaultData>RepositoryDefaultData</DefaultData>
+<IdLocation>^GitHub.RepositoryD</IdLocation>
+<IndexLocation>^GitHub.RepositoryI</IndexLocation>
+<StreamLocation>^GitHub.RepositoryS</StreamLocation>
+<Data name="LanguageDetails">
+<Attribute>LanguageDetails</Attribute>
+<Structure>subnode</Structure>
+<Subscript>"LanguageDetails"</Subscript>
+</Data>
+<Data name="RepositoryDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Name</Value>
+</Value>
+<Value name="3">
+<Value>Organization</Value>
+</Value>
+<Value name="4">
+<Value>Stars</Value>
+</Value>
+<Value name="5">
+<Value>Forks</Value>
+</Value>
+<Value name="6">
+<Value>Link</Value>
+</Value>
+<Value name="7">
+<Value>Watchers</Value>
+</Value>
+<Value name="8">
+<Value>IssuesOpened</Value>
+</Value>
+<Value name="9">
+<Value>IssuesClosed</Value>
+</Value>
+<Value name="10">
+<Value>Description</Value>
+</Value>
+<Value name="11">
+<Value>Updated</Value>
+</Value>
+<Value name="12">
+<Value>Commits</Value>
+</Value>
+<Value name="13">
+<Value>Branches</Value>
+</Value>
+<Value name="14">
+<Value>Releases</Value>
+</Value>
+<Value name="15">
+<Value>Contributors</Value>
+</Value>
+<Value name="16">
+<Value>Type</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

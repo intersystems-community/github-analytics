@@ -1,0 +1,12 @@
+GitHub.Login.cls
+GitHub.Organization.cls
+GitHub.OrganizationLoader.cls
+GitHub.OrganizationPage.cls
+GitHub.RepositoriesLoader.cls
+GitHub.Repository.cls
+GitHub.RepositoryDetailsLoader.cls
+GitHub.RepositoryPage.cls
+History.Clones.cls
+History.Commits.cls
+History.Views.cls
+SSL.Configuration.cls
