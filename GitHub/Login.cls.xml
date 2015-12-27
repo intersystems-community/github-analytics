@@ -31,6 +31,11 @@
 	, request.InsertFormData("authenticity_token",authenticityToken) , request.InsertFormData("utf8","&#x2713;")
 	set sc = request.Post("/session") 
 	
+	if request.HttpResponse.StatusCode'=302{
+		write "Login or password are incorrect."
+		Q 0
+		}
+	
 	set setCookie = request.HttpResponse.Headers("SET-COOKIE")
 	set setCookie = $piece(setCookie,",",1,2)
 	

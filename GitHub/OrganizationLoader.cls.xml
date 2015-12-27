@@ -12,7 +12,7 @@ Entry point</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	if login'=""{
-		set sc = ##class(GitHub.Login).CreateLoggedSession(login,password,.session)
+		set sc = ##class(GitHub.Login).CreateLoggedSession(login,password,.session) Q:'sc
 		}
 	else{set session = ""}
 	
