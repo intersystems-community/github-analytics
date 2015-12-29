@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.Commit">
+<SqlTableName>CommitTable</SqlTableName>
+<Super>%Persistent</Super>
+<TimeCreated>63915,20730.548027</TimeCreated>
+
+<Property name="Repository">
+<Type>GitHub.Repository</Type>
+<Cardinality>one</Cardinality>
+<Inverse>Commits</Inverse>
+<Relationship>1</Relationship>
+<Required>1</Required>
+<OnDelete>cascade</OnDelete>
+</Property>
+
+<Property name="Author">
+<Type>%String</Type>
+</Property>
+
+<Property name="Message">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="255"/>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="Url">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="255"/>
+</Property>
+
+<Property name="Created">
+<Type>%TimeStamp</Type>
+</Property>
+
+<Method name="Insert">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data,repositoryId]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set num = 1
+	while $data(data(num,"Message")){
+		
+		set updated = $piece( data(num,"Date"), "Z") ;2015-12-19T21:59:35
+		
+		set date = $piece( updated,"T"), date = $zstrip(date, "<>WC" ) ;2015-12-19
+		set time = $piece( updated,"T",2), time = $zstrip(time, "<>WC" ) ;21:59:35
+		
+		set dateh = $zdh( date, 3) 
+		set timeh = $zth( time )
+		
+		#; Making Moscow timezone, eg adding 3 hours
+		if timeh >= 75600{			;if time more than 21:00:00 
+			set timeh = timeh - 75600 ;minus 21 hours
+			set dateh = dateh + 1}
+		else{						;if time fewer than 21:00:00
+			set timeh = timeh + 10800	;plus 3 hours
+			}
+		
+		set tmpDate = $zdt( dateh_","_timeh, 3 ) ;odbc timestamp
+		set tmpAuthor = data(num,"Author"), tmpMessage = data(num,"Message"), tmpUrl = data(num,"Url")
+		
+		&sql(
+			Insert Into GitHub.CommitTable (Repository, Author, Message, Created, Url)
+			Values (:repositoryId, :tmpAuthor, :tmpMessage, :tmpDate, :tmpUrl)
+		)
+		if SQLCODE'=0 {
+			Quit	
+			}
+		set num = num + 1
+		}
+	Quit:'$data(SQLCODE) 1
+	Quit:SQLCODE $$$ERROR(,$system.SQL.SQLCODE(SQLCODE))
+	Quit 1
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^GitHub.CommitD</DataLocation>
+<DefaultData>CommitDefaultData</DefaultData>
+<IdLocation>^GitHub.CommitD</IdLocation>
+<IndexLocation>^GitHub.CommitI</IndexLocation>
+<StreamLocation>^GitHub.CommitS</StreamLocation>
+<Data name="CommitDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Repository</Value>
+</Value>
+<Value name="3">
+<Value>Author</Value>
+</Value>
+<Value name="4">
+<Value>Message</Value>
+</Value>
+<Value name="5">
+<Value>Url</Value>
+</Value>
+<Value name="6">
+<Value>Date</Value>
+</Value>
+<Value name="7">
+<Value>Created</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

@@ -4,15 +4,6 @@
 <Super>%Persistent</Super>
 <TimeCreated>63911,35415.804336</TimeCreated>
 
-<Property name="Repository">
-<Type>GitHub.Repository</Type>
-<Cardinality>one</Cardinality>
-<Inverse>HistoryCommits</Inverse>
-<Relationship>1</Relationship>
-<Required>1</Required>
-<OnDelete>cascade</OnDelete>
-</Property>
-
 <Property name="Amount">
 <Type>%Integer</Type>
 </Property>
@@ -64,8 +55,8 @@ Extract date and amount of commits
 		Quit:((start+dateExternal)\secondsPerDay)>=(+$horolog) 
 		set dateInternal = $zdt((start+dateExternal)\secondsPerDay,3)
 		set commits = data(num)
-		&sql(Insert Into History.Commits (Repository, Amount, DateOfData)
-			Values (:data("RepositoryId"), :commits, :dateInternal))
+		&sql(Insert Into History.Commits (Amount, DateOfData)
+			Values (:commits, :dateInternal))
 		set sc = sc!SQLCODE
 		Quit:SQLCODE
 		set num = num + 1

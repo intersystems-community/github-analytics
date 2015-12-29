@@ -267,6 +267,7 @@ commits
 	set stats = $piece( detailInfoHtml, "<span class=""num text-emphasized"">", num )	
 	set stats = $piece( stats, "</span>")
 	set stats = $zstrip( stats, "<>WC" )
+	set stats = $p(stats,",")_$p(stats,",",2)_$p(stats,",",3)
 	Quit +stats		//Fetching contributors - sc.plugin, iknowSocial
 ]]></Implementation>
 </Method>

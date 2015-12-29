@@ -88,6 +88,8 @@ url</Description>
 <IndexLocation>^GitHub.OrganizationI</IndexLocation>
 <StreamLocation>^GitHub.OrganizationS</StreamLocation>
 <Data name="OrganizationDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

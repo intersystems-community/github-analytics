@@ -8,9 +8,9 @@
 <Description><![CDATA[
 Load detail information of repository with Name <var>data("Repository")</var>]]></Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[organization,&session]]></FormalSpec>
+<FormalSpec><![CDATA[organization:%String,&session,login:%String,password:%String]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[	Quit ..Scan(organization,.session)
+<Implementation><![CDATA[	Quit ..Scan(organization,.session, login, password)
 ]]></Implementation>
 </Method>
 
@@ -18,7 +18,7 @@ Load detail information of repository with Name <var>data("Repository")</var>]]>
 <Description>
 scan all organization's repository pages</Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[organization,&session]]></FormalSpec>
+<FormalSpec><![CDATA[organization,&session,login:%String,password:%String]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	
@@ -42,22 +42,15 @@ scan all organization's repository pages</Description>
 		Quit:'sc 
 		
 		#; Adding history
-		Quit:'##class(GitHub.Repository).NameExists( page.Repository, .repositoryId )
+		Quit:'##class(GitHub.Repository).NameExists( repository, .repositoryId )
+		
 		#; Commits
-		set sc = page.GetActivityData("/graphs/commit-activity-data", .commitsHistoryHtml)
-		if sc = "html"{
-			write !, "Have no access to history of commits data"
-			set sc = 1
-			}
-		else{
-			set sc = ##class(History.Commits).ParseCommitsHistory(commitsHistoryHtml, .data)
-			
-			set data("RepositoryId") = repositoryId
-			set sc = ##class(History.Commits).Insert(.data)
-			
-			write:sc !,"History of commits successfuly loaded"
-			Quit:'sc
-			}
+		set data("Repository") = repositoryId
+		set sc = ..GetCommits(organization,repository,login,password,.data)
+#;		set sc = ##class(GitHub.Commit).Insert(.data)
+		
+		write:sc !,"All commits successfuly loaded"
+		Quit:'sc
 			
 		#; Views
 		set sc = page.GetActivityData("/graphs/traffic-data", .viewsHistoryHtml)
@@ -104,6 +97,61 @@ scan all organization's repository pages</Description>
 	Quit:$find(html,"<!DOCTYPE html>") "html"
 	kill tmpStrm
 	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="GetCommits">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[organization:%String,repository:%String,login:%String,password:%String,&commits,page:%Integer=1]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    #dim APIRequest As %Net.HttpRequest
+    #dim obj As List of %ZEN.proxyObject
+    set APIRequest = ##class(GitHub.API).CreateAPIRequest(login, password)
+    set APIRequest.Location = "/repos/"_organization_"/"_repository_"/commits" 
+    
+    set num = 0, repositoryId = commits("Repository")
+    while 1{
+	    do APIRequest.SetParam("page",page) 
+	    set st = APIRequest.Get()
+
+	    set st1 = ##class(%ZEN.Auxiliary.jsonProvider).%ConvertJSONToObject(APIRequest.HttpResponse.Data,,.obj,1)
+	    set st = $$$ADDSC(st, st1)
+		
+		set sc = ..ParseCommits(obj, .commits)
+
+		set sc = ##class(GitHub.Commit).Insert(.commits, repositoryId)
+		Quit:'sc
+		kill commits
+		
+	    if obj.Count()'=0 {
+	        /// next page exists
+	        set page = page + 1
+			Continue
+	    }
+	    else{Quit}
+    }
+    
+    Quit st!sc
+]]></Implementation>
+</Method>
+
+<Method name="ParseCommits">
+<Description><![CDATA[
+Extract data of commits from %ZEN.proxyObject <object>objectZEN<object>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[objectZEN:%ZEN.proxyObject,&commits]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    for i=1:1:objectZEN.Count() {
+        set commitData = objectZEN.GetAt(i)
+        set commits(i,"Author") = commitData.author.login
+        if commitData.author.login = "" set commits(i,"Author") = commitData.commit.author.name
+        set commits(i,"Date") = commitData.commit.author.date
+        set commits(i,"Message") = commitData.commit.message
+        set commits(i,"Url") = commitData."html_url" 
+    }
+    Quit 1
 ]]></Implementation>
 </Method>
 

@@ -22,7 +22,7 @@ Entry point</Description>
 	if 'sc write sc Quit sc
 	
 	write !,"Detail load Organization's Repositories ... "
-	set sc = ##class(GitHub.RepositoryDetailsLoader).Load( organization, .session ) 
+	set sc = ##class(GitHub.RepositoryDetailsLoader).Load( organization, .session, login, password ) 
 	if 'sc write sc Quit sc
 	
 	Quit sc

@@ -16,8 +16,8 @@ This class contain information about repositories</Description>
 <Unique>1</Unique>
 </Index>
 
-<Property name="HistoryCommits">
-<Type>History.Commits</Type>
+<Property name="Commits">
+<Type>GitHub.Commit</Type>
 <Cardinality>many</Cardinality>
 <Inverse>Repository</Inverse>
 <Relationship>1</Relationship>
@@ -71,10 +71,6 @@ This class contain information about repositories</Description>
 <Type>%Integer</Type>
 </Property>
 
-<Property name="IssuesClosed">
-<Type>%Integer</Type>
-</Property>
-
 <Property name="Description">
 <Type>%String</Type>
 <Parameter name="MAXLEN" value="255"/>
@@ -85,7 +81,7 @@ This class contain information about repositories</Description>
 <Type>%TimeStamp</Type>
 </Property>
 
-<Property name="Commits">
+<Property name="CommitsAmount">
 <Type>%Integer</Type>
 </Property>
 
@@ -143,7 +139,7 @@ This class contain information about repositories</Description>
 <Implementation><![CDATA[
 	&sql( Update GitHub.Repository 
 		Set Watchers = :data("Watchers"), IssuesOpened = :data("Issues")
-		, Commits = :data("Commits"), Branches = :data("Branches")
+		, CommitsAmount = :data("Commits"), Branches = :data("Branches")
 		, Releases = :data("Releases"), Contributors = :data("Contributors")
 		Where Id =:data("Id") 
 	)
@@ -178,6 +174,8 @@ This class contain information about repositories</Description>
 <Subscript>"LanguageDetails"</Subscript>
 </Data>
 <Data name="RepositoryDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>
@@ -188,22 +186,22 @@ This class contain information about repositories</Description>
 <Value>Organization</Value>
 </Value>
 <Value name="4">
-<Value>Stars</Value>
+<Value>Type</Value>
 </Value>
 <Value name="5">
-<Value>Forks</Value>
+<Value>Stars</Value>
 </Value>
 <Value name="6">
-<Value>Link</Value>
+<Value>Forks</Value>
 </Value>
 <Value name="7">
-<Value>Watchers</Value>
+<Value>Link</Value>
 </Value>
 <Value name="8">
-<Value>IssuesOpened</Value>
+<Value>Watchers</Value>
 </Value>
 <Value name="9">
-<Value>IssuesClosed</Value>
+<Value>IssuesOpened</Value>
 </Value>
 <Value name="10">
 <Value>Description</Value>
@@ -212,7 +210,7 @@ This class contain information about repositories</Description>
 <Value>Updated</Value>
 </Value>
 <Value name="12">
-<Value>Commits</Value>
+<Value>CommitsAmount</Value>
 </Value>
 <Value name="13">
 <Value>Branches</Value>
@@ -222,9 +220,6 @@ This class contain information about repositories</Description>
 </Value>
 <Value name="15">
 <Value>Contributors</Value>
-</Value>
-<Value name="16">
-<Value>Type</Value>
 </Value>
 </Data>
 </Storage>
