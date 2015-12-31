@@ -119,6 +119,8 @@ scan all organization's repository pages</Description>
 	    set st = $$$ADDSC(st, st1)
 		
 		set sc = ..ParseCommits(obj, .commits)
+		
+		set sc = ##class(GitHub.Contributor).InsertOrGet(.commits)
 
 		set sc = ##class(GitHub.Commit).Insert(.commits, repositoryId)
 		Quit:'sc
@@ -147,9 +149,31 @@ Extract data of commits from %ZEN.proxyObject <object>objectZEN<object>]]></Desc
         set commitData = objectZEN.GetAt(i)
         set commits(i,"Author") = commitData.author.login
         if commitData.author.login = "" set commits(i,"Author") = commitData.commit.author.name
-        set commits(i,"Date") = commitData.commit.author.date
+        set commits(i,"Author","Link") = commitData.author."html_url"
+        set commits(i,"Author","eMail") = commitData.commit.author.email
+        
+        #; Work with date format
+        set tmpDate = commitData.commit.author.date
+        
+		set updated = $piece( tmpDate, "Z") ;2015-12-19T21:59:35
+		
+		set date = $piece( updated,"T"), date = $zstrip(date, "<>WC" ) ;2015-12-19
+		set time = $piece( updated,"T",2), time = $zstrip(time, "<>WC" ) ;21:59:35
+		
+		set dateh = $zdh( date, 3) 
+		set timeh = $zth( time )
+		
+		#; Making Moscow timezone, eg adding 3 hours
+		if timeh >= 75600{			;if time more than 21:00:00 
+			set timeh = timeh - 75600 ;minus 21 hours
+			set dateh = dateh + 1}
+		else{						;if time fewer than 21:00:00
+			set timeh = timeh + 10800	;plus 3 hours
+			}
+		set commits(i,"Date") = $zdt( dateh_","_timeh, 3 ) ;odbc timestamp
+
         set commits(i,"Message") = commitData.commit.message
-        set commits(i,"Url") = commitData."html_url" 
+        set commits(i,"Link") = commitData."html_url" 
     }
     Quit 1
 ]]></Implementation>

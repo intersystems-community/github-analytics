@@ -15,7 +15,12 @@
 </Property>
 
 <Property name="Author">
-<Type>%String</Type>
+<Type>GitHub.Contributor</Type>
+<Cardinality>one</Cardinality>
+<Inverse>Commits</Inverse>
+<Relationship>1</Relationship>
+<Required>1</Required>
+<OnDelete>cascade</OnDelete>
 </Property>
 
 <Property name="Message">
@@ -24,7 +29,7 @@
 <Parameter name="TRUNCATE" value="1"/>
 </Property>
 
-<Property name="Url">
+<Property name="Link">
 <Type>%String</Type>
 <Parameter name="MAXLEN" value="255"/>
 </Property>
@@ -41,28 +46,14 @@
 	set num = 1
 	while $data(data(num,"Message")){
 		
-		set updated = $piece( data(num,"Date"), "Z") ;2015-12-19T21:59:35
+		if data(num,"AuthorId") = "EmptyAuthor" {set num = num + 1 Continue}
 		
-		set date = $piece( updated,"T"), date = $zstrip(date, "<>WC" ) ;2015-12-19
-		set time = $piece( updated,"T",2), time = $zstrip(time, "<>WC" ) ;21:59:35
-		
-		set dateh = $zdh( date, 3) 
-		set timeh = $zth( time )
-		
-		#; Making Moscow timezone, eg adding 3 hours
-		if timeh >= 75600{			;if time more than 21:00:00 
-			set timeh = timeh - 75600 ;minus 21 hours
-			set dateh = dateh + 1}
-		else{						;if time fewer than 21:00:00
-			set timeh = timeh + 10800	;plus 3 hours
-			}
-		
-		set tmpDate = $zdt( dateh_","_timeh, 3 ) ;odbc timestamp
-		set tmpAuthor = data(num,"Author"), tmpMessage = data(num,"Message"), tmpUrl = data(num,"Url")
+		set tmpDate = data(num,"Date")
+		set tmpAuthorId = data(num,"AuthorId"), tmpMessage = data(num,"Message"), tmpLink = data(num,"Link")
 		
 		&sql(
-			Insert Into GitHub.CommitTable (Repository, Author, Message, Created, Url)
-			Values (:repositoryId, :tmpAuthor, :tmpMessage, :tmpDate, :tmpUrl)
+			Insert Into GitHub.CommitTable (Repository, Author, Message, Created, Link)
+			Values (:repositoryId, :tmpAuthorId, :tmpMessage, :tmpDate, :tmpLink)
 		)
 		if SQLCODE'=0 {
 			Quit	
@@ -96,12 +87,9 @@
 <Value>Message</Value>
 </Value>
 <Value name="5">
-<Value>Url</Value>
+<Value>Link</Value>
 </Value>
 <Value name="6">
-<Value>Date</Value>
-</Value>
-<Value name="7">
 <Value>Created</Value>
 </Value>
 </Data>
