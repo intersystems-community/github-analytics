@@ -6,7 +6,7 @@
 
 <Method name="LoadAll">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>organizationName="intersystems-ru",login:%String="TsvetkovAV",password:%String="Tsvetkov93"</FormalSpec>
+<FormalSpec>organizationName="intersystems-ru",login:%String="",password:%String=""</FormalSpec>
 <Implementation><![CDATA[
 	set sc = 1
 
