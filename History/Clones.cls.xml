@@ -22,27 +22,6 @@
 <SqlFieldName>DateOfData</SqlFieldName>
 </Property>
 
-<Method name="ParseClonesHistory">
-<Description>
-Extract date and amount of views
-{"counts":[{"bucket":1451174400,"total":1,"unique":1}...{"bucket":1450051200,"total":0,"unique":0}],"summary":{"total":5,"unique":5}}</Description>
-<ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[html:%String,&data]]></FormalSpec>
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[
-	set pos = $find(html,"bucket"":"), num = 0, pos = 1
-	while $find(html,"bucket"":",pos){
-		set num = num + 1
-		set pos = $find(html,"bucket"":",pos), end = $find(html,",",pos)-($length(",")+1)
-		set data(num,"date") = $extract(html,pos,end)
-		set pos = $find(html,"total"":",pos), end = $find(html,",",pos)-($length(",")+1)
-		set data(num,"amount") = $extract(html,pos,end)
-		}
-
-	Quit 1
-]]></Implementation>
-</Method>
-
 <Method name="Insert">
 <ClassMethod>1</ClassMethod>
 <FormalSpec><![CDATA[&data]]></FormalSpec>
@@ -54,13 +33,13 @@ Extract date and amount of views
 	//End of week is saturday, date is seconds from <var>start<var>
 	//86400 - senonds in 24 hours
 	set num = 1
-	while $data(data(num,("date"))){
-		if ((start+data(num,"date"))\secondsPerDay)>=(+$horolog){
+	while $data(data(num,("Date"))){
+		if ((start+data(num,"Date"))\secondsPerDay)>(+$horolog){
 			set num = num + 1
 			Continue
 			}
-		set dateInternal = $zdt((start+data(num,"date"))\secondsPerDay,3)
-		set amount = data(num,"amount")
+		set dateInternal = $zdt((start+data(num,"Date"))\secondsPerDay,3)
+		set amount = data(num,"Unique")
 		&sql(Insert Into History.Clones (Repository, Amount, DateOfData)
 			Values (:data("RepositoryId"), :amount, :dateInternal))
 		set sc = sc!SQLCODE
@@ -80,6 +59,8 @@ Extract date and amount of views
 <IndexLocation>^History.ClonesI</IndexLocation>
 <StreamLocation>^History.ClonesS</StreamLocation>
 <Data name="ClonesDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.Parser">
+<Super>%RegisteredObject</Super>
+<TimeCreated>63916,39510.739472</TimeCreated>
+
+<Method name="ParseOrganization">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&organization,objectZen]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set organization("Name") = objectZen.login, organization("FullName") = objectZen.name
+	, organization("Description") = objectZen.description
+	, organization("eMail") = objectZen.email, organization("OrgLink") = objectZen.blog
+
+    Quit 1
+]]></Implementation>
+</Method>
+
+<Method name="ParseOrgMembers">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&orgMembers,objectZen]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	for i=1:1:objectZen.Count() {
+		set memberData = objectZen.GetAt(i)	
+		set orgMembers(i,"Link") = memberData."html_url"
+		,orgMembers(i,"Name") = memberData.login
+		}
+	Quit 1
+]]></Implementation>
+</Method>
+
+<Method name="ParseOrgRepos">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&orgRepos,objectZen]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	for i=1:1:objectZen.Count() {
+		set repoData = objectZen.GetAt(i)
+		set orgRepos(i,"Description") = repoData.description, orgRepos(i,"Forks") = repoData."forks_count"
+		, orgRepos(i,"IssuesOpened") = repoData."open_issues_count", orgRepos(i,"Link") = repoData."html_url"
+		, orgRepos(i,"Name") = repoData.name, orgRepos(i,"Stars") = repoData."stargazers_count"
+		, orgRepos(i,"Type") = repoData.private ;#1 or 0
+		, orgRepos(i,"Updated") = ##class(GitHub.Parser).ConvertDate(repoData."updated_at")
+		, orgRepos(i,"Created") = ##class(GitHub.Parser).ConvertDate(repoData."created_at")
+		, orgRepos(i,"Pushed") = ##class(GitHub.Parser).ConvertDate(repoData."pushed_at")
+		}
+	Quit 1
+]]></Implementation>
+</Method>
+
+<Method name="ConvertDate">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>externalDate:%String</FormalSpec>
+<ReturnType>%TimeStamp</ReturnType>
+<Implementation><![CDATA[
+    #; Work with date format
+	set tmpDate = $piece( externalDate, "Z") ;2015-12-19T21:59:35
+	
+	set date = $piece( tmpDate,"T"), date = $zstrip(date, "<>WC" ) ;2015-12-19
+	set time = $piece( tmpDate,"T",2), time = $zstrip(time, "<>WC" ) ;21:59:35
+	
+	set dateh = $zdh( date, 3) 
+	set timeh = $zth( time )
+	
+	#; Making Moscow timezone, eg adding 3 hours
+	if timeh >= 75600{			;if time more than 21:00:00 
+		set timeh = timeh - 75600 ;minus 21 hours
+		set dateh = dateh + 1}
+	else{						;if time fewer than 21:00:00
+		set timeh = timeh + 10800	;plus 3 hours
+		}
+	set internalDate = $zdt( dateh_","_timeh, 3 ) ;odbc timestamp
+	Quit internalDate
+]]></Implementation>
+</Method>
+
+<Method name="ParseRepoCommits">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&commits,objectZen]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	for i=1:1:objectZen.Count() {
+	    set commitData = objectZen.GetAt(i)
+	    set commits(i,"Name") = commitData.author.login
+	    if commitData.author.login = "" set commits(i,"Name") = commitData.commit.author.name
+	    set commits(i,"Link") = commitData.author."html_url"
+	    set commits(i,"eMail") = commitData.commit.author.email
+	    
+		set commits(i,"Date") = ##class(GitHub.Parser).ConvertDate(commitData.commit.author.date)
+	    set commits(i,"Message") = commitData.commit.message
+	    set commits(i,"CommitLink") = commitData."html_url" 
+	}
+	Quit 1
+]]></Implementation>
+</Method>
+</Class>
+</Export>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.Loader">
+<Super>GitHub.API</Super>
+<TimeCreated>63916,39482.538124</TimeCreated>
+
+<Method name="LoadAll">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>organizationName="intersystems-ru",login:%String="TsvetkovAV",password:%String="Tsvetkov93"</FormalSpec>
+<Implementation><![CDATA[
+	set sc = 1
+
+	if ##class(GitHub.Organization).NameExists( organizationName, .organizationId ) {
+		
+		#; set sc = ##class(GitHub.Organization).NameDelete( organizationName ) Quit:'sc sc
+		#; ERROR #5803: Can't get exclusive lock
+		#; 
+		#; workaround:
+		set sc = ##class(GitHub.Loader).DeleteRepositories( organizationId ) Quit:'sc sc
+		set sc = ##class(GitHub.Organization).NameDelete(organizationName)
+		}
+				
+    set APIRequest = ..CreateAPIRequest(login, password)
+	
+	set sc = APIRequest.LoadOrganization(organizationName, .organizationId) Quit:'sc sc
+	
+	set sc = APIRequest.LoadOrgMembers(organizationName, organizationId) Quit:'sc sc
+	
+	set sc = APIRequest.LoadOrgRepos(organizationName, organizationId) Quit:'sc sc	
+	
+		
+	write !,"Load repositories's commits and history of views and clones"
+	set activityRequest = ##class(GitHub.ActivityData).CreateLoggedSession(login,password)
+	
+	
+	set sql = "Select Name, Id From GitHub.Repository Where Organization->Name = ? "
+	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, organizationName)
+	while rs.%Next() {
+		set repository("Name") = rs.Name, repository("Id") = rs.Id
+		
+		set sc = APIRequest.LoadRepoCommits(organizationName,.repository) Quit:'sc
+		
+		#; Views
+		set sc = activityRequest.GetActivityData("/graphs/traffic-data", organizationName, repository("Name"), .objectZen) Quit:'sc
+		if sc = "html"{
+			write !, "Have no access to history of views and clones data",!
+			set sc = 1
+			Continue
+			}
+		else{
+			set sc = ##class(GitHub.ActivityData).ParseHistory(.views, objectZen) Quit:'sc
+			
+			set sc = ##class(GitHub.ActivityData).SetViewsHistory(.views,.repository) Quit:'sc
+			}
+			
+		#; Clones
+		set sc = activityRequest.GetActivityData("/graphs/clone-activity-data", organizationName, repository("Name"), .objectZen) Quit:'sc
+		
+		set sc = ##class(GitHub.ActivityData).ParseHistory(.clones, objectZen) Quit:'sc
+		
+		set sc = ##class(GitHub.ActivityData).SetClonesHistory(.clones,.repository) Quit:'sc
+		}
+]]></Implementation>
+</Method>
+
+<Method name="DeleteRepositories">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>organizationId</FormalSpec>
+<Implementation><![CDATA[
+	set sc = 1
+	set sql = "Select Id From GitHub.Repository Where Organization = ?"
+	set rs = ##class(%SQL.Statement).%ExecDirect( , sql, organizationId ) 
+	while rs.%Next(){s sc = sc && ##class(GitHub.Repository).%DeleteId( rs.Id ) Quit:'sc}
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="LoadOrganization">
+<FormalSpec><![CDATA[organizationName:%String,&organizationId]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write !,"Load organization's properties"
+	set sc = ..GetOrganization(organizationName, .objectZen) Quit:'sc sc
+
+	set sc = ##class(GitHub.Parser).ParseOrganization(.organization, objectZen) Quit:'sc sc
+
+	set sc = ##class(GitHub.Organization).Insert(.organization) Quit:'sc sc
+	set organizationId = organization
+	kill organization
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="LoadOrgMembers">
+<FormalSpec>organizationName:%String,organizationId</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write !,"Load organization's members"
+	set countPrevious = 1, page = 1
+	while 1{
+		set sc = ..GetOrgMembers(organizationName, .objectZen, .count, page) Quit:'sc
+		if count = 0 {Quit}
+		
+		set orgMember("Member") = organizationId
+		set sc = ##class(GitHub.Parser).ParseOrgMembers(.orgMember, objectZen) Quit:'sc
+		for num = 1:1:count{
+			set sc = ##class(GitHub.Contributor).Insert(.orgMember, num) Quit:'sc
+			}
+		
+		kill orgMember
+		if countPrevious > count Quit ;#Count of Member objects on this page reduced, it means that next page will be empty
+		set countPrevious = count, page = page + 1
+		}
+
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="LoadOrgRepos">
+<FormalSpec>organizationName:%String,organizationId</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write !,"Load organization's repositories"
+	set countPrevious = 1, page = 1
+	while 1{
+		set sc = ..GetOrgRepos(organizationName, .objectZen, .count, page)
+		if count = 0 {Quit}
+		
+		set repository("Organization") = organizationId
+		set sc = ##class(GitHub.Parser).ParseOrgRepos(.repository, objectZen) Quit:'sc
+		for num = 1:1:count{
+			set sc = ##class(GitHub.Repository).Insert(.repository, num) Quit:'sc
+			}
+			
+		kill repository
+		if countPrevious > count Quit ;#Count of Repos objects on this page reduced, it means that next page will be empty
+		set countPrevious = count, page = page + 1
+		}
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="LoadRepoCommits">
+<FormalSpec><![CDATA[organizationName,&repository]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write !,"Repository "_repository("Name"),!,"Commits load",!
+	set countPrevious = 1, page = 1
+	while 1{
+		set sc = ..GetRepoCommits(organizationName, repository("Name"), .objectZen, .count, page)
+		if count = 0 {Quit}
+		
+		set commit("RepositoryId") = repository("Id")
+		set sc = ##class(GitHub.Parser).ParseRepoCommits(.commit, objectZen) Quit:'sc
+		
+		set sc = ##class(GitHub.Contributor).InsertOrUpdate(.commit) Quit:'sc
+		for num = 1:1:count{
+			set sc = ##class(GitHub.Commit).Insert(.commit, num) Quit:'sc
+			}
+		
+		write "."
+		kill commit
+		if countPrevious > count Quit ;#Count of Repos objects on this page reduced, it means that next page will be empty
+		set countPrevious = count, page = page + 1
+		}
+	Quit sc
+]]></Implementation>
+</Method>
+</Class>
+</Export>

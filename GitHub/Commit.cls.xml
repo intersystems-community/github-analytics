@@ -40,29 +40,19 @@
 
 <Method name="Insert">
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&data,repositoryId]]></FormalSpec>
+<FormalSpec><![CDATA[&data,num:%Integer]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	set num = 1
-	while $data(data(num,"Message")){
-		
-		if data(num,"AuthorId") = "EmptyAuthor" {set num = num + 1 Continue}
-		
-		set tmpDate = data(num,"Date")
-		set tmpAuthorId = data(num,"AuthorId"), tmpMessage = data(num,"Message"), tmpLink = data(num,"Link")
-		
-		&sql(
-			Insert Into GitHub.CommitTable (Repository, Author, Message, Created, Link)
-			Values (:repositoryId, :tmpAuthorId, :tmpMessage, :tmpDate, :tmpLink)
-		)
-		if SQLCODE'=0 {
-			Quit	
-			}
-		set num = num + 1
-		}
-	Quit:'$data(SQLCODE) 1
-	Quit:SQLCODE $$$ERROR(,$system.SQL.SQLCODE(SQLCODE))
-	Quit 1
+	if data(num,"AuthorId") = "EmptyAuthor" {Quit 1}
+	
+	set tmpDate = data(num,"Date")
+	set tmpAuthorId = data(num,"AuthorId"), tmpMessage = data(num,"Message"), tmpLink = data(num,"CommitLink")
+	
+	&sql(
+		Insert Into GitHub.CommitTable (Repository, Author, Message, Created, Link)
+		Values (:data("RepositoryId"), :tmpAuthorId, :tmpMessage, :tmpDate, :tmpLink)
+	)
+	Quit 'SQLCODE
 ]]></Implementation>
 </Method>
 
@@ -74,6 +64,8 @@
 <IndexLocation>^GitHub.CommitI</IndexLocation>
 <StreamLocation>^GitHub.CommitS</StreamLocation>
 <Data name="CommitDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

@@ -5,28 +5,144 @@
 <Super>%RegisteredObject</Super>
 <TimeCreated>63915,22620.787602</TimeCreated>
 
+<Property name="request">
+<Type>%Net.HttpRequest</Type>
+</Property>
+
 <Method name="CreateAPIRequest">
 <ClassMethod>1</ClassMethod>
 <FormalSpec>login:%String,password:%String</FormalSpec>
-<ReturnType>%Net.HttpRequest</ReturnType>
+<ReturnType>GitHub.API</ReturnType>
 <Implementation><![CDATA[
 	set sslConfigName = "github.com"
 	set sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
 		write !, "SSLConfig error: ", sc 	
 	}
 	
-    set request=##class(%Net.HttpRequest).%New()
-    set request.Https=1
-	set request.SSLConfiguration = sslConfigName
-    set request.Server="api.github.com"                         
-    do request.SetHeader("Accept","application/vnd.github.v3+json")             // we want 3rd version of api   
+	set object = ..%New()
+    set object.request=##class(%Net.HttpRequest).%New()
+    set object.request.Https=1
+	set object.request.SSLConfiguration = sslConfigName
+    set object.request.Server="api.github.com"                         
+    do object.request.SetHeader("Accept","application/vnd.github.v3+json")             // we want 3rd version of api   
 
     if ((login'="") && (password'="")) { 			// supply Username and Password, if both are provided. GitHub accept Basic Auth
-        set request.Username = login                // https://developer.github.com/v3/auth/
-        set request.Password = password
+        set object.request.Username = login                // https://developer.github.com/v3/auth/
+        set object.request.Password = password
     }   
 
-    Quit request
+    Quit object
+]]></Implementation>
+</Method>
+
+<Method name="UrlOrganization">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>organizationName:%String</FormalSpec>
+<Implementation><![CDATA["/orgs/"_organizationName
+]]></Implementation>
+</Method>
+
+<Method name="UrlOrgMembers">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>organizationName:%String</FormalSpec>
+<Implementation><![CDATA["/orgs/"_organizationName_"/members"
+]]></Implementation>
+</Method>
+
+<Method name="UrlOrgRepos">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>organizationName:%String</FormalSpec>
+<Implementation><![CDATA["/orgs/"_organizationName_"/repos"
+]]></Implementation>
+</Method>
+
+<Method name="UrlRepoCommits">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>organizationName:%String,repositoryName:%String</FormalSpec>
+<Implementation><![CDATA["/repos/"_organizationName_"/"_repositoryName_"/commits"
+]]></Implementation>
+</Method>
+
+<Method name="GetObjectZen">
+<FormalSpec><![CDATA[&objectZen,page:%Integer=0,&count:%Integer]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	do:page'=0 ..request.SetParam("page",page) 
+    set st = ..request.Get()
+    
+    set st1 = ##class(%ZEN.Auxiliary.jsonProvider).%ConvertJSONToObject(..request.HttpResponse.Data,,.objectZen,1)
+    set st = $$$ADDSC(st, st1)
+    	
+	set:page'=0 count = objectZen.Count()
+    
+    Quit st
+]]></Implementation>
+</Method>
+
+<Method name="GetOrganization">
+<Description>
+1.set APIRequest.request.Location = "/orgs/"_organization
+Extract properties of Class Organization, all but People property</Description>
+<FormalSpec><![CDATA[organizationName:%String,&objectZen]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    set ..request.Location = ..UrlOrganization(organizationName)
+    
+	set sc = ..GetObjectZen(.objectZen)
+	
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="GetOrgMembers">
+<Description>
+2.set APIRequest.request.Location = "/orgs/"_organization_"/members"
+Properties of Class Contributor, all but eMail property
+Amount of people - Property People of Class Organization</Description>
+<FormalSpec><![CDATA[organizationName:%String,&objectZen,&count:%Integer,page:%Integer=1]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    set ..request.Location = ..UrlOrgMembers(organizationName)
+    
+	set sc = ..GetObjectZen(.objectZen, page, .count)
+  
+    Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="GetOrgRepos">
+<Description>
+3.set APIRequest.request.Location = "/orgs/"_organization_"/repos"
+Properties of Class Repository, all but CommitsAmount, Contributors, Watchers</Description>
+<FormalSpec><![CDATA[organizationName:%String,&objectZen,&count:%Integer,page:%Integer=1]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    set ..request.Location = ..UrlOrgRepos(organizationName)
+    
+	set sc = ..GetObjectZen(.objectZen, page, .count)
+  
+    Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="GetRepoCommits">
+<Description>
+4.set APIRequest.request.Location = "/repos/"_organization_"/"_repository_"/commits"
+Propery CommitsAmount of Class Repository
+Properties of Class Commit, all
+Properties of Class Contributor, all but Membership property</Description>
+<FormalSpec><![CDATA[organizationName:%String,repositoryName:%String,&objectZen,&count:%Integer,page:%Integer=1]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    set ..request.Location = ..UrlRepoCommits(organizationName,repositoryName)
+    
+	set sc = ..GetObjectZen(.objectZen, page, .count)
+  
+    Quit sc
 ]]></Implementation>
 </Method>
 </Class>

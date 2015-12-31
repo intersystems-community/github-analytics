@@ -33,6 +33,13 @@ This class contain information about organization of repositories</Description>
 <Parameter name="MAXLEN" value="255"/>
 </Property>
 
+<Property name="Contributors">
+<Type>GitHub.Contributor</Type>
+<Cardinality>many</Cardinality>
+<Inverse>Member</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
 <Property name="Repositories">
 <Description>
 organization's repositories collection</Description>
@@ -44,7 +51,22 @@ organization's repositories collection</Description>
 
 <Property name="People">
 <Type>%Integer</Type>
+<Calculated>1</Calculated>
+<SqlComputeCode> set {*} = ##class(GitHub.Organization).GetPeople({Name})</SqlComputeCode>
+<SqlComputed>1</SqlComputed>
 </Property>
+
+<Method name="GetPeople">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>name</FormalSpec>
+<ReturnType>%Integer</ReturnType>
+<Implementation><![CDATA[
+	set sql = "Select Count(Id) As People From GitHub.Contributor Where Member->Name = ? "
+	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, name)
+	if rs.%Next() {set result = rs.People}
+	Quit result
+]]></Implementation>
+</Method>
 
 <Property name="Link">
 <Description>
@@ -69,9 +91,9 @@ url</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	&sql(
-		Insert Into Github.Organization (Name, FullName, eMail, OrgLink, Description, People) 
+		Insert Into Github.Organization (Name, FullName, eMail, OrgLink, Description) 
 		Values ( :data("Name"), :data("FullName"), :data("eMail")
-		, :data("OrgLink"), :data("Description"), :data("People") )
+		, :data("OrgLink"), :data("Description") )
 	)
 	if SQLCODE=0 {
 		set data=%ROWID Quit 1
@@ -107,9 +129,6 @@ url</Description>
 </Value>
 <Value name="6">
 <Value>Description</Value>
-</Value>
-<Value name="7">
-<Value>People</Value>
 </Value>
 </Data>
 </Storage>

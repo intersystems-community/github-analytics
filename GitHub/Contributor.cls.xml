@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.Contributor">
+<Super>%Persistent</Super>
+<TimeCreated>63915,38243.903748</TimeCreated>
+
+<Property name="Name">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Index name="Name">
+<Properties>Name</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Property name="eMail">
+<Type>%String</Type>
+</Property>
+
+<Property name="Link">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="255"/>
+</Property>
+
+<Property name="Commits">
+<Type>GitHub.Commit</Type>
+<Cardinality>many</Cardinality>
+<Inverse>Author</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="Member">
+<Type>GitHub.Organization</Type>
+<Cardinality>one</Cardinality>
+<Inverse>Contributors</Inverse>
+<Relationship>1</Relationship>
+<OnDelete>cascade</OnDelete>
+</Property>
+
+<Method name="InsertOrUpdate">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set num = 1, sc = 1
+	while $data(data(num,"Name")){
+		
+		if ##class(GitHub.Contributor).NameExists( data(num,"Name"), .contributorId ){
+			set sc = ##class(GitHub.Contributor).Update(.data, num, contributorId) Quit:'sc
+			
+			kill data(num,"Name"), data(num,"eMail"), data(num,"Link")
+			set data(num,"AuthorId") = contributorId
+			set num = num + 1
+			Continue
+			}
+		elseif data(num,"Name") = ""{
+			kill data(num,"Name"), data(num,"eMail"), data(num,"Link")
+			set data(num,"AuthorId") = "EmptyAuthor"
+			set num = num + 1
+			Continue
+			}
+		
+		s sc = ##class(GitHub.Contributor).Insert(.data, num) Quit:'sc
+				
+		kill data(num,"Name"), data(num,"eMail"), data(num,"Link")
+		set num = num + 1
+		}
+	
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="Insert">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data,num]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set tmpName = data(num,"Name"), tmpEMail = $g(data(num,"eMail"))
+	, tmpLink = data(num,"Link"), tmpMember = $g(data("Member"))
+	
+	&sql(
+		Insert Into GitHub.Contributor (Name, eMail, Link, Member)
+		Values (:tmpName, :tmpEMail, :tmpLink, :tmpMember)
+	)
+	if 'SQLCODE{set data(num,"AuthorId") = %ROWID}
+	Quit 'SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="Update">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data,num,contributorId]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set contributor = ##class(GitHub.Contributor).%OpenId(contributorId)
+	if (contributor.eMail="" && data(num,"eMail")'="") set contributor.eMail = data(num,"eMail")
+	if (contributor.Link="" && data(num,"Link")'="") set contributor.Link = data(num,"Link")
+	
+	set sc = contributor.%Save()
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^GitHub.ContributorD</DataLocation>
+<DefaultData>ContributorDefaultData</DefaultData>
+<IdLocation>^GitHub.ContributorD</IdLocation>
+<IndexLocation>^GitHub.ContributorI</IndexLocation>
+<StreamLocation>^GitHub.ContributorS</StreamLocation>
+<Data name="ContributorDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Name</Value>
+</Value>
+<Value name="3">
+<Value>eMail</Value>
+</Value>
+<Value name="4">
+<Value>Link</Value>
+</Value>
+<Value name="5">
+<Value>Member</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

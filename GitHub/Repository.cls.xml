@@ -63,10 +63,6 @@ This class contain information about repositories</Description>
 <Parameter name="MAXLEN" value="255"/>
 </Property>
 
-<Property name="Watchers">
-<Type>%Integer</Type>
-</Property>
-
 <Property name="IssuesOpened">
 <Type>%Integer</Type>
 </Property>
@@ -81,83 +77,55 @@ This class contain information about repositories</Description>
 <Type>%TimeStamp</Type>
 </Property>
 
+<Property name="Pushed">
+<Type>%TimeStamp</Type>
+</Property>
+
+<Property name="Created">
+<Type>%TimeStamp</Type>
+</Property>
+
 <Property name="CommitsAmount">
 <Type>%Integer</Type>
+<Calculated>1</Calculated>
+<SqlComputeCode> set {*} = ##class(GitHub.Repository).GetCommitsAmount({Name})</SqlComputeCode>
+<SqlComputed>1</SqlComputed>
 </Property>
 
-<Property name="Branches">
-<Type>%Integer</Type>
-</Property>
-
-<Property name="Releases">
-<Type>%Integer</Type>
-</Property>
-
-<Property name="Contributors">
-<Type>%Integer</Type>
-</Property>
-
-<Property name="LanguageDetails">
-<Type>%String</Type>
-<Collection>array</Collection>
-</Property>
+<Method name="GetCommitsAmount">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>name</FormalSpec>
+<ReturnType>%Integer</ReturnType>
+<Implementation><![CDATA[
+	set sql = "Select Count(Id) As CommitsAmount From GitHub.CommitTable Where Repository->Name = ? "
+	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, name)
+	if rs.%Next() {set result = rs.CommitsAmount}
+	Quit result
+]]></Implementation>
+</Method>
 
 <Method name="Insert">
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&data=""]]></FormalSpec>
+<FormalSpec><![CDATA[&data="",num:%Integer]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-#;	set obj = ##class(GitHub.Repository).%New()
-#;	set obj.Description = data("Description"), obj.Forks = data("Forks")
-#;	, obj.Link = data("Link"), obj.Name = data("Name"), obj.Organization = data("Organization")
-#;	,obj.Stars = data("Stars"), obj.Updated = data("Updated")
-#;	
-#;	set sc = obj.%Save()
-#;	do:'sc $system.Status.DisplayError(sc)
-#;	set data = obj.%Id()
-#;	kill obj
-#;	Quit 1
-	
+	set tmpName = data(num,"Name"), tmpDescription = data(num,"Description")
+	, tmpForks = data(num,"Forks"), tmpIssuesOpened = data(num,"IssuesOpened")
+	, tmpLink = data(num,"Link"), tmpStars = data(num,"Stars")
+	, tmpType = data(num,"Type"), tmpUpdated = data(num,"Updated")
+	, tmpCreated = data(num,"Created"), tmpPushed = data(num,"Pushed")	
 	&sql(
-		Insert Into GitHub.Repository (Organization, Type, Name, Stars, Forks, Link, Updated, Description)
+		Insert Into GitHub.Repository (Organization,Name,Description,Forks,IssuesOpened,Link,Stars,Type,Updated,Created,Pushed)
 		Values (
-			:data("Organization"), :data("Type"), :data("Name"), :data("Stars"), :data("Forks")
-			, :data("Link"), :data("Updated"), :data("Description")
+			:data("Organization"), :tmpName, :tmpDescription, :tmpForks, :tmpIssuesOpened
+			, :tmpLink, :tmpStars, :tmpType, :tmpUpdated, :tmpCreated, :tmpPushed
 		)
 	)
 	if SQLCODE=0 {
 		set data = %ROWID Quit 1	
 	}
 	
-	Quit $$$ERROR(,$system.SQL.SQLCODE(SQLCODE))
-]]></Implementation>
-</Method>
-
-<Method name="UpdateFromRepositoryPage">
-<ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&data]]></FormalSpec>
-<Implementation><![CDATA[
-	&sql( Update GitHub.Repository 
-		Set Watchers = :data("Watchers"), IssuesOpened = :data("Issues")
-		, CommitsAmount = :data("Commits"), Branches = :data("Branches")
-		, Releases = :data("Releases"), Contributors = :data("Contributors")
-		Where Id =:data("Id") 
-	)
-	Quit:SQLCODE 0
-	
-	Quit:'$data(data("LanguageDetails","Amount")) 1
-	Quit:data("LanguageDetails","Amount")=0 $$$ERROR($$$GeneralError,"Amount of languages = 0") 
-	
-	set repositoryObj = ##class(GitHub.Repository).%OpenId(data("Id"))
-	set amount = data("LanguageDetails","Amount"), i = 1
-	while i<=amount{
-		set sc = repositoryObj.LanguageDetails.SetAt(data("LanguageDetails",i,"Percent"),data("LanguageDetails",i,"Language"))
-		Quit:'sc
-		set i = i + 1
-		}
-	Quit:'sc sc
-	set sc = repositoryObj.%Save()
-	Quit sc
+	Quit 'SQLCODE
 ]]></Implementation>
 </Method>
 
@@ -168,11 +136,6 @@ This class contain information about repositories</Description>
 <IdLocation>^GitHub.RepositoryD</IdLocation>
 <IndexLocation>^GitHub.RepositoryI</IndexLocation>
 <StreamLocation>^GitHub.RepositoryS</StreamLocation>
-<Data name="LanguageDetails">
-<Attribute>LanguageDetails</Attribute>
-<Structure>subnode</Structure>
-<Subscript>"LanguageDetails"</Subscript>
-</Data>
 <Data name="RepositoryDefaultData">
 <Structure>listnode</Structure>
 <Subscript/>
@@ -198,28 +161,19 @@ This class contain information about repositories</Description>
 <Value>Link</Value>
 </Value>
 <Value name="8">
-<Value>Watchers</Value>
-</Value>
-<Value name="9">
 <Value>IssuesOpened</Value>
 </Value>
-<Value name="10">
+<Value name="9">
 <Value>Description</Value>
 </Value>
-<Value name="11">
+<Value name="10">
 <Value>Updated</Value>
 </Value>
+<Value name="11">
+<Value>Pushed</Value>
+</Value>
 <Value name="12">
-<Value>CommitsAmount</Value>
-</Value>
-<Value name="13">
-<Value>Branches</Value>
-</Value>
-<Value name="14">
-<Value>Releases</Value>
-</Value>
-<Value name="15">
-<Value>Contributors</Value>
+<Value>Created</Value>
 </Value>
 </Data>
 </Storage>

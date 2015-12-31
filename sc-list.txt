@@ -1,9 +1,13 @@
+GitHub.ActivityData.cls
 GitHub.API.cls
 GitHub.Commit.cls
+GitHub.Contributor.cls
+GitHub.Loader.cls
 GitHub.Login.cls
 GitHub.Organization.cls
 GitHub.OrganizationLoader.cls
 GitHub.OrganizationPage.cls
+GitHub.Parser.cls
 GitHub.RepositoriesLoader.cls
 GitHub.Repository.cls
 GitHub.RepositoryDetailsLoader.cls
