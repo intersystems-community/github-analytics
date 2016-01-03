@@ -56,6 +56,17 @@
 ]]></Implementation>
 </Method>
 
+<Method name="Update">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>id,total,unique</FormalSpec>
+<Implementation><![CDATA[
+	&sql( Update History.Views 
+		Set Amount = :total, UniqueVisitors = :unique Where Id =:id )
+	Q:SQLCODE=0 1
+	Q $$$ERROR($$$GeneralError,$system.SQL.SQLCODE(SQLCODE))
+]]></Implementation>
+</Method>
+
 <Storage name="Default">
 <Type>%Library.CacheStorage</Type>
 <DataLocation>^History.ViewsD</DataLocation>
@@ -64,8 +75,6 @@
 <IndexLocation>^History.ViewsI</IndexLocation>
 <StreamLocation>^History.ViewsS</StreamLocation>
 <Data name="ViewsDefaultData">
-<Structure>listnode</Structure>
-<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

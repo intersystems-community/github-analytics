@@ -98,6 +98,33 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
 ]]></Implementation>
 </Method>
 
+<Method name="SetOrIgnoreViewsHistory">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&views,&repository]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set sql = "Select Top 1 DateOfData, Id From History.Views Where Repository = ? "
+	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
+	if rs.%Next() {
+		set top = rs.DateOfData, topId = rs.Id
+		}
+	set topDate = $zdh($piece(top," ",1),3)
+	set start = 4070908800, secondsPerDay = 86400
+	
+	set num = 1
+	while $data(views(num,"Date")){
+		set tmpDate = (start+views(num,"Date"))\secondsPerDay
+		if (tmpDate=topDate) {
+			set sc = ##class(History.Views).Update(topId,views(num,"Total"),views(num,"Unique"))
+			kill views(num,"Date") 
+			Quit}
+		set num = num + 1
+		}
+	set sc = ##class(GitHub.ActivityData).SetViewsHistory(.views,.repository) 
+	Quit sc
+]]></Implementation>
+</Method>
+
 <Method name="SetViewsHistory">
 <ClassMethod>1</ClassMethod>
 <FormalSpec><![CDATA[&views,&repository]]></FormalSpec>
@@ -107,6 +134,33 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
 	set sc = ##class(History.Views).Insert(.views)
 	
 	write:sc !,"History of views successfuly loaded"
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="SetOrIgnoreClonesHistory">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&clones,&repository]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set sql = "Select Top 1 DateOfData, Id From History.Clones Where Repository = ? "
+	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
+	if rs.%Next() {
+		set top = rs.DateOfData, topId = rs.Id
+		}
+	set topDate = $zdh($piece(top," ",1),3)
+	set start = 4070908800, secondsPerDay = 86400
+
+	set num = 1
+	while $data(clones(num,"Date")){
+		set tmpDate = (start+clones(num,"Date"))\secondsPerDay
+		if (tmpDate=topDate) {
+			set sc = ##class(History.Clones).Update(topId,clones(num,"Total"))
+			kill clones(num,"Date") 
+			Quit}
+		set num = num + 1
+		}
+	set sc = ##class(GitHub.ActivityData).SetClonesHistory(.clones,.repository) 
 	Quit sc
 ]]></Implementation>
 </Method>

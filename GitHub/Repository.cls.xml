@@ -104,6 +104,35 @@ This class contain information about repositories</Description>
 ]]></Implementation>
 </Method>
 
+<Method name="InsertOrUpdate">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data,&listToUpdate]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set num = 1, sc = 1
+	while $data(data(num,"Name")){
+		
+		if ##class(GitHub.Repository).NameExists( data(num,"Name"), .repositoryId ){
+			set sc = ##class(GitHub.Repository).Update(.data, num, repositoryId) Quit:'sc
+			
+			set num = num + 1
+			Continue
+			}
+		
+		set sc = ##class(GitHub.Repository).Insert(.data, num) Quit:'sc
+		
+		set numToUpdate = listToUpdate("Amount") + 1
+		set listToUpdate(numToUpdate,"Name") = data(num,"Name")
+		,listToUpdate(numToUpdate,"Id") = data
+		,listToUpdate("Amount") = listToUpdate("Amount") + 1
+		
+		set num = num + 1
+		}
+	
+	Quit sc
+]]></Implementation>
+</Method>
+
 <Method name="Insert">
 <ClassMethod>1</ClassMethod>
 <FormalSpec><![CDATA[&data="",num:%Integer]]></FormalSpec>
@@ -129,6 +158,27 @@ This class contain information about repositories</Description>
 ]]></Implementation>
 </Method>
 
+<Method name="Update">
+<Description>
+Created,Forks,IssuesOpened,Pushed,Updated,Stars</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&data,num,repositoryId]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set tmpForks = data(num,"Forks"), tmpIssuesOpened = data(num,"IssuesOpened")
+	, tmpStars = data(num,"Stars"), tmpUpdated = data(num,"Updated")
+	, tmpCreated = data(num,"Created"), tmpPushed = data(num,"Pushed")	
+	
+	&sql( Update GitHub.Repository 
+		Set Created = :tmpCreated, Updated = :tmpUpdated, Pushed = :tmpPushed
+		, Forks = :tmpForks, IssuesOpened = :tmpIssuesOpened, Stars = :tmpStars
+		Where Id =:repositoryId 
+	)
+	Q:SQLCODE=0 1
+	Q $$$ERROR($$$GeneralError,$system.SQL.SQLCODE(SQLCODE))
+]]></Implementation>
+</Method>
+
 <Storage name="Default">
 <Type>%Library.CacheStorage</Type>
 <DataLocation>^GitHub.RepositoryD</DataLocation>
@@ -137,8 +187,6 @@ This class contain information about repositories</Description>
 <IndexLocation>^GitHub.RepositoryI</IndexLocation>
 <StreamLocation>^GitHub.RepositoryS</StreamLocation>
 <Data name="RepositoryDefaultData">
-<Structure>listnode</Structure>
-<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

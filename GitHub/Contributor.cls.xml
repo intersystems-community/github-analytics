@@ -61,7 +61,7 @@
 			Continue
 			}
 		
-		s sc = ##class(GitHub.Contributor).Insert(.data, num) Quit:'sc
+		set sc = ##class(GitHub.Contributor).Insert(.data, num) Quit:'sc
 				
 		kill data(num,"Name"), data(num,"eMail"), data(num,"Link")
 		set num = num + 1
@@ -94,8 +94,8 @@
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	set contributor = ##class(GitHub.Contributor).%OpenId(contributorId)
-	if (contributor.eMail="" && data(num,"eMail")'="") set contributor.eMail = data(num,"eMail")
-	if (contributor.Link="" && data(num,"Link")'="") set contributor.Link = data(num,"Link")
+	if (contributor.eMail="")&&($g(data(num,"eMail"))'="") set contributor.eMail = data(num,"eMail")
+	if (contributor.Link="")&&($g(data(num,"Link"))'="") set contributor.Link = data(num,"Link")
 	
 	set sc = contributor.%Save()
 	Quit sc
@@ -110,8 +110,6 @@
 <IndexLocation>^GitHub.ContributorI</IndexLocation>
 <StreamLocation>^GitHub.ContributorS</StreamLocation>
 <Data name="ContributorDefaultData">
-<Structure>listnode</Structure>
-<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

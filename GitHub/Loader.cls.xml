@@ -6,7 +6,7 @@
 
 <Method name="LoadAll">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>organizationName="intersystems-ru",login:%String="TsvetkovAV",password:%String="Tsvetkov93"</FormalSpec>
+<FormalSpec>organizationName="intersystems-ru",login:%String="",password:%String=""</FormalSpec>
 <Implementation><![CDATA[
 	set sc = 1
 
@@ -32,11 +32,14 @@
 	write !,"Load repositories's commits and history of views and clones"
 	set activityRequest = ##class(GitHub.ActivityData).CreateLoggedSession(login,password)
 	
-	
+	set numberOfRepository = 1
 	set sql = "Select Name, Id From GitHub.Repository Where Organization->Name = ? "
 	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, organizationName)
 	while rs.%Next() {
 		set repository("Name") = rs.Name, repository("Id") = rs.Id
+		
+		write !,numberOfRepository_"."
+		set numberOfRepository = numberOfRepository + 1
 		
 		set sc = APIRequest.LoadRepoCommits(organizationName,.repository) Quit:'sc
 		
@@ -144,7 +147,7 @@
 <FormalSpec><![CDATA[organizationName,&repository]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	write !,"Repository "_repository("Name"),!,"Commits load",!
+	write "Repository "_repository("Name"),!,"Commits load",!
 	set countPrevious = 1, page = 1
 	while 1{
 		set sc = ..GetRepoCommits(organizationName, repository("Name"), .objectZen, .count, page)

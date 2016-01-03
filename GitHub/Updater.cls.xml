@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="GitHub.Updater">
+<Super>GitHub.API</Super>
+<TimeCreated>63917,41694.9819</TimeCreated>
+
+<Method name="UpdateAll">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>organizationName="intersystems-ru",login:%String="",password:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	set sc = 1
+
+	if '##class(GitHub.Organization).NameExists( organizationName, .organizationId ) {
+		write !,"Organization "_organizationName_" does not exist"
+		,!,"Nothing to update"
+		Quit sc		
+		}
+				
+    set APIRequest = ..CreateAPIRequest(login, password)
+	
+	set sc = APIRequest.UpdateOrgMembers(organizationName, organizationId) Quit:'sc sc
+	
+	set sc = APIRequest.UpdateOrgRepos(organizationName, organizationId, .listToUpdate) Quit:'sc sc	
+	
+	
+	write !,"Load repositories's commits and history of views and clones"
+	set activityRequest = ##class(GitHub.ActivityData).CreateLoggedSession(login,password)
+	
+	set numberOfRepository = 1
+	set sql = "Select Name, Id From GitHub.Repository Where Organization->Name = ? "
+	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, organizationName)
+	while rs.%Next() {
+		set repository("Name") = rs.Name, repository("Id") = rs.Id
+		
+		write !,numberOfRepository_".Repository "_repository("Name")
+		set numberOfRepository = numberOfRepository + 1
+		
+		for i = 1:1:listToUpdate("Amount"){
+			set repositoryToUpdate("Name") = listToUpdate(i,"Name")
+			,repositoryToUpdate("Id") = listToUpdate(i,"Id")
+			set sc = APIRequest.LoadAllOrNewRepoCommits(organizationName,.repositoryToUpdate) Quit:'sc
+			}
+		
+		#; Views
+		set sc = activityRequest.GetActivityData("/graphs/traffic-data", organizationName, repository("Name"), .objectZen) Quit:'sc
+		if sc = "html"{
+			write !, "Have no access to history of views and clones data",!
+			set sc = 1
+			Continue
+			}
+		else{
+			set sc = ##class(GitHub.ActivityData).ParseHistory(.views, objectZen) Quit:'sc
+			
+			set sc = ##class(GitHub.ActivityData).SetOrIgnoreViewsHistory(.views,.repository) Quit:'sc
+			}
+			
+		#; Clones
+		set sc = activityRequest.GetActivityData("/graphs/clone-activity-data", organizationName, repository("Name"), .objectZen) Quit:'sc
+		
+		set sc = ##class(GitHub.ActivityData).ParseHistory(.clones, objectZen) Quit:'sc
+		
+		set sc = ##class(GitHub.ActivityData).SetOrIgnoreClonesHistory(.clones,.repository) Quit:'sc
+		}
+]]></Implementation>
+</Method>
+
+<Method name="UpdateOrgMembers">
+<FormalSpec>organizationName:%String,organizationId</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write !,"Update organization's members"
+	set countPrevious = 1, page = 1
+	while 1{
+		set sc = ..GetOrgMembers(organizationName, .objectZen, .count, page) Quit:'sc
+		if count = 0 {Quit}
+		
+		set orgMember("Member") = organizationId
+		set sc = ##class(GitHub.Parser).ParseOrgMembers(.orgMember, objectZen) Quit:'sc
+		
+		set sc = ##class(GitHub.Contributor).InsertOrUpdate(.orgMember) Quit:'sc
+		
+		kill orgMember
+		if countPrevious > count Quit ;#Count of Member objects on this page reduced, it means that next page will be empty
+		set countPrevious = count, page = page + 1
+		}
+
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="UpdateOrgRepos">
+<FormalSpec><![CDATA[organizationName:%String,organizationId,&listToUpdate]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write !,"Update organization's repositories"
+	set countPrevious = 1, page = 1, numToUpdate = 0
+	while 1{
+		set sc = ..GetOrgRepos(organizationName, .objectZen, .count, page)
+		if count = 0 {Quit}
+		
+		set repository("Organization") = organizationId
+		set sc = ##class(GitHub.Parser).ParseOrgRepos(.repository, objectZen) Quit:'sc
+		
+		for num = 1:1:count{
+			set sql = "Select Pushed,Id From GitHub.Repository Where Name = ? "
+			set rs = ##class(%SQL.Statement).%ExecDirect(,sql, repository(num,"Name"))
+			while rs.%Next() {
+				if rs.Pushed'=repository(num,"Pushed"){
+					set numToUpdate = numToUpdate + 1
+					set listToUpdate(numToUpdate,"Name") = repository(num,"Name")
+					, listToUpdate(numToUpdate,"Id") = rs.Id
+					}
+				}
+			}
+		set listToUpdate("Amount") = numToUpdate
+		set sc = ##class(GitHub.Repository).InsertOrUpdate(.repository, .listToUpdate) Quit:'sc
+		set numToUpdate = listToUpdate("Amount")
+		kill repository
+		if countPrevious > count Quit ;#Count of Repos objects on this page reduced, it means that next page will be empty
+		set countPrevious = count, page = page + 1
+		}
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="LoadAllOrNewRepoCommits">
+<FormalSpec><![CDATA[organizationName,&repository]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set sql = "Select Count(Id) As Amount From GitHub.CommitTable Where Repository = ? "
+	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
+	if rs.%Next() {set amountOfCommits = rs.Amount}
+	
+	if amountOfCommits = 0{
+		set sc = ..LoadRepoCommits(organizationName, .repository)
+		Q sc
+		}
+	
+	set sc = ..LoadNewRepoCommits(organizationName, .repository)
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="LoadRepoCommits">
+<FormalSpec><![CDATA[organizationName,&repository]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write !,"Commits load",!
+	set countPrevious = 1, page = 1
+	while 1{
+		set sc = ..GetRepoCommits(organizationName, repository("Name"), .objectZen, .count, page)
+		if count = 0 {Quit}
+		
+		set commit("RepositoryId") = repository("Id")
+		set sc = ##class(GitHub.Parser).ParseRepoCommits(.commit, objectZen) Quit:'sc
+		
+		set sc = ##class(GitHub.Contributor).InsertOrUpdate(.commit) Quit:'sc
+		for num = 1:1:count{
+			set sc = ##class(GitHub.Commit).Insert(.commit, num) Quit:'sc
+			}
+		
+		write "."
+		kill commit
+		if countPrevious > count Quit ;#Count of Repos objects on this page reduced, it means that next page will be empty
+		set countPrevious = count, page = page + 1
+		}
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="LoadNewRepoCommits">
+<FormalSpec><![CDATA[organizationName,&repository]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write !,"New commits load",!
+	set countPrevious = 1, page = 1
+	while 1{
+		set sql = "Select Top 1 Created From GitHub.CommitTable Where Repository = ? "
+		set rs = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
+		if rs.%Next() {
+			set topCreated = rs.Created
+			}
+		set topCreatedDate = $zdh($piece(topCreated," ",1),3)
+		, topCreatedTime = $zth($piece(topCreated," ",2),1)
+		
+		set sc = ..GetRepoCommits(organizationName, repository("Name"), .objectZen, .count, page)
+		if count = 0 {Quit}
+		
+		set commit("RepositoryId") = repository("Id")
+		set sc = ##class(GitHub.Parser).ParseRepoCommits(.commit, objectZen) Quit:'sc
+		
+		set sc = ##class(GitHub.Contributor).InsertOrUpdate(.commit) Quit:'sc
+		for num = 1:1:count{
+			set tmpDate = $zdh($piece(commit(num,"Date")," ",1),3)
+			,tmpTime = $zth($piece(commit(num,"Date")," ",2),1)
+			if (tmpDate<topCreatedDate) {set sc = "Stop" Quit}
+			elseif (tmpDate=topCreatedDate)&&(tmpTime<topCreatedTime) {set sc = "Stop" Quit}
+			set sc = ##class(GitHub.Commit).Insert(.commit, num) Quit:'sc
+			}
+		
+		if sc="Stop" {set sc = 1 Quit}
+		Quit:'sc
+		
+		write "."
+		kill commit
+		if countPrevious > count Quit ;#Count of Repos objects on this page reduced, it means that next page will be empty
+		set countPrevious = count, page = page + 1
+		}
+	Quit sc
+]]></Implementation>
+</Method>
+</Class>
+</Export>

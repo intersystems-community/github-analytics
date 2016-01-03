@@ -51,6 +51,17 @@
 ]]></Implementation>
 </Method>
 
+<Method name="Update">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>id,total</FormalSpec>
+<Implementation><![CDATA[
+	&sql( Update History.Clones 
+		Set Amount = :total Where Id =:id )
+	Q:SQLCODE=0 1
+	Q $$$ERROR($$$GeneralError,$system.SQL.SQLCODE(SQLCODE))
+]]></Implementation>
+</Method>
+
 <Storage name="Default">
 <Type>%Library.CacheStorage</Type>
 <DataLocation>^History.ClonesD</DataLocation>
@@ -59,8 +70,6 @@
 <IndexLocation>^History.ClonesI</IndexLocation>
 <StreamLocation>^History.ClonesS</StreamLocation>
 <Data name="ClonesDefaultData">
-<Structure>listnode</Structure>
-<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>
