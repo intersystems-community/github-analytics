@@ -40,7 +40,8 @@
 		
 		write !,numberOfRepository_".Repository "_repository("Name")
 		set numberOfRepository = numberOfRepository + 1
-				
+		
+		
 		#; Views
 		set sc = activityRequest.GetActivityData("/graphs/traffic-data", organizationName, repository("Name"), .objectZen) Quit:'sc
 		if sc = "html"{
@@ -51,7 +52,15 @@
 		else{
 			set sc = ##class(GitHub.ActivityData).ParseHistory(.views, objectZen) Quit:'sc
 			
+			set sql = "Select Count(Id) As CountOfViews From History.Views Where Repository = ?"
+			set rsViews = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
+			if rsViews.%Next() {
+				set count = rsViews.CountOfViews
+				}
+			if count = 0{set sc = ##class(GitHub.ActivityData).SetViewsHistory(.views,.repository) Quit:'sc}
+			else{
 			set sc = ##class(GitHub.ActivityData).SetOrIgnoreViewsHistory(.views,.repository) Quit:'sc
+				}
 			}
 			
 		#; Clones
@@ -59,7 +68,15 @@
 		
 		set sc = ##class(GitHub.ActivityData).ParseHistory(.clones, objectZen) Quit:'sc
 		
+		set sql = "Select Count(Id) As CountOfClones From History.Clones Where Repository = ?"
+		set rsClones = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
+		if rsClones.%Next() {
+			set count = rsClones.CountOfClones
+			}
+		if count = 0{set sc = ##class(GitHub.ActivityData).SetClonesHistory(.clones,.repository) Quit:'sc}
+		else{
 		set sc = ##class(GitHub.ActivityData).SetOrIgnoreClonesHistory(.clones,.repository) Quit:'sc
+			}
 		}
 ]]></Implementation>
 </Method>
