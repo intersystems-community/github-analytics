@@ -103,7 +103,7 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
 <FormalSpec><![CDATA[&views,&repository]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	set sql = "Select Top 1 DateOfData, Id From History.Views Where Repository = ? "
+	set sql = "Select Top 1 DateOfData, Id From History.Views Where Repository = ? Order By DateOfData Desc"
 	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
 	if rs.%Next() {
 		set top = rs.DateOfData, topId = rs.Id
@@ -143,7 +143,7 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
 <FormalSpec><![CDATA[&clones,&repository]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	set sql = "Select Top 1 DateOfData, Id From History.Clones Where Repository = ? "
+	set sql = "Select Top 1 DateOfData, Id From History.Clones Where Repository = ? Order By DateOfData Desc"
 	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
 	if rs.%Next() {
 		set top = rs.DateOfData, topId = rs.Id

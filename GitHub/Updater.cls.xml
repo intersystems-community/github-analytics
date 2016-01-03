@@ -22,8 +22,14 @@
 	
 	set sc = APIRequest.UpdateOrgRepos(organizationName, organizationId, .listToUpdate) Quit:'sc sc	
 	
-	
-	write !,"Load repositories's commits and history of views and clones"
+	write !,"Load repositories's commits"
+	for i = 1:1:listToUpdate("Amount"){
+		set repositoryToUpdate("Name") = listToUpdate(i,"Name")
+		,repositoryToUpdate("Id") = listToUpdate(i,"Id")
+		set sc = APIRequest.LoadAllOrNewRepoCommits(organizationName,.repositoryToUpdate) Quit:'sc
+		}
+			
+	write !,"Load repositories's history of views and clones"
 	set activityRequest = ##class(GitHub.ActivityData).CreateLoggedSession(login,password)
 	
 	set numberOfRepository = 1
@@ -34,13 +40,7 @@
 		
 		write !,numberOfRepository_".Repository "_repository("Name")
 		set numberOfRepository = numberOfRepository + 1
-		
-		for i = 1:1:listToUpdate("Amount"){
-			set repositoryToUpdate("Name") = listToUpdate(i,"Name")
-			,repositoryToUpdate("Id") = listToUpdate(i,"Id")
-			set sc = APIRequest.LoadAllOrNewRepoCommits(organizationName,.repositoryToUpdate) Quit:'sc
-			}
-		
+				
 		#; Views
 		set sc = activityRequest.GetActivityData("/graphs/traffic-data", organizationName, repository("Name"), .objectZen) Quit:'sc
 		if sc = "html"{
@@ -145,7 +145,7 @@
 <FormalSpec><![CDATA[organizationName,&repository]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	write !,"Commits load",!
+	write !,"Repository "_repository("Name"),!,"Commits load",!
 	set countPrevious = 1, page = 1
 	while 1{
 		set sc = ..GetRepoCommits(organizationName, repository("Name"), .objectZen, .count, page)
@@ -172,7 +172,7 @@
 <FormalSpec><![CDATA[organizationName,&repository]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	write !,"New commits load",!
+	write !,"Repository "_repository("Name"),!,"New commits load",!
 	set countPrevious = 1, page = 1
 	while 1{
 		set sql = "Select Top 1 Created From GitHub.CommitTable Where Repository = ? "
@@ -194,7 +194,7 @@
 			set tmpDate = $zdh($piece(commit(num,"Date")," ",1),3)
 			,tmpTime = $zth($piece(commit(num,"Date")," ",2),1)
 			if (tmpDate<topCreatedDate) {set sc = "Stop" Quit}
-			elseif (tmpDate=topCreatedDate)&&(tmpTime<topCreatedTime) {set sc = "Stop" Quit}
+			elseif (tmpDate=topCreatedDate)&&(tmpTime=topCreatedTime) {set sc = "Stop" Quit}
 			set sc = ##class(GitHub.Commit).Insert(.commit, num) Quit:'sc
 			}
 		
