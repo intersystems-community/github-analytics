@@ -175,7 +175,7 @@
 	write !,"Repository "_repository("Name"),!,"New commits load",!
 	set countPrevious = 1, page = 1
 	while 1{
-		set sql = "Select Top 1 Created From GitHub.CommitTable Where Repository = ? "
+		set sql = "Select Top 1 Created From GitHub.CommitTable Where Repository = ? Order By Created Desc"
 		set rs = ##class(%SQL.Statement).%ExecDirect(,sql, repository("Id"))
 		if rs.%Next() {
 			set topCreated = rs.Created
