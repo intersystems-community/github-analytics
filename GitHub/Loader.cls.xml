@@ -44,7 +44,7 @@
 		set sc = APIRequest.LoadRepoCommits(organizationName,.repository) Quit:'sc
 		
 		#; Views
-		set sc = activityRequest.GetActivityData("/graphs/traffic-data", organizationName, repository("Name"), .objectZen) Quit:'sc
+		set sc = activityRequest.GetActivityData("/graphs/traffic-data", organizationName, repository("Name"), .objectZen)
 		if sc = "html"{
 			write !, "Have no access to history of views and clones data",!
 			set sc = 1

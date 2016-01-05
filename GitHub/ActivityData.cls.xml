@@ -77,9 +77,7 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
     set st1 = ##class(%ZEN.Auxiliary.jsonProvider).%ConvertJSONToObject(..request.HttpResponse.Data,,.objectZen,1)
     set st = $$$ADDSC(st, st1)
     
-	set count = objectZen.counts.Count()
-    
-	Quit:count st
+	Quit:st st
 	Quit "html"
 ]]></Implementation>
 </Method>
