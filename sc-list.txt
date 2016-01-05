@@ -12,6 +12,7 @@ GitHub.RepositoriesLoader.cls
 GitHub.Repository.cls
 GitHub.RepositoryDetailsLoader.cls
 GitHub.RepositoryPage.cls
+GitHub.Task.cls
 GitHub.Updater.cls
 History.Clones.cls
 History.Commits.cls
