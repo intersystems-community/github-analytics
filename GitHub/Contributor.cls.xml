@@ -23,6 +23,10 @@
 <Parameter name="MAXLEN" value="255"/>
 </Property>
 
+<Property name="Existed">
+<Type>%TimeStamp</Type>
+</Property>
+
 <Property name="Commits">
 <Type>GitHub.Commit</Type>
 <Cardinality>many</Cardinality>
@@ -49,6 +53,10 @@
 		if ##class(GitHub.Contributor).NameExists( data(num,"Name"), .contributorId ){
 			set sc = ##class(GitHub.Contributor).Update(.data, num, contributorId) Quit:'sc
 			
+			if $get(data("Member"))'=""{
+				set sc = ##class(History.Contributors).Insert(data(num,"Name"),data(num,"Link"),data("Member"),0)
+				}
+				
 			kill data(num,"Name"), data(num,"eMail"), data(num,"Link")
 			set data(num,"AuthorId") = contributorId
 			set num = num + 1
@@ -62,6 +70,10 @@
 			}
 		
 		set sc = ##class(GitHub.Contributor).Insert(.data, num) Quit:'sc
+
+		if $get(data("Member"))'=""{
+			set sc = ##class(History.Contributors).Insert(data(num,"Name"),data(num,"Link"),data("Member"),1)
+			}
 				
 		kill data(num,"Name"), data(num,"eMail"), data(num,"Link")
 		set num = num + 1
@@ -78,10 +90,12 @@
 <Implementation><![CDATA[
 	set tmpName = data(num,"Name"), tmpEMail = $g(data(num,"eMail"))
 	, tmpLink = data(num,"Link"), tmpMember = $g(data("Member"))
+	set date = ""
+	if $get(data("Member"))'="" {set date = $zdt(+$h,3)}
 	
 	&sql(
-		Insert Into GitHub.Contributor (Name, eMail, Link, Member)
-		Values (:tmpName, :tmpEMail, :tmpLink, :tmpMember)
+		Insert Into GitHub.Contributor (Name, eMail, Link, Member, Existed)
+		Values (:tmpName, :tmpEMail, :tmpLink, :tmpMember, :date)
 	)
 	if 'SQLCODE{set data(num,"AuthorId") = %ROWID}
 	Quit 'SQLCODE
@@ -96,6 +110,7 @@
 	set contributor = ##class(GitHub.Contributor).%OpenId(contributorId)
 	if (contributor.eMail="")&&($g(data(num,"eMail"))'="") set contributor.eMail = data(num,"eMail")
 	if (contributor.Link="")&&($g(data(num,"Link"))'="") set contributor.Link = data(num,"Link")
+	if $get(data("Member"))'="" {set date = $zdt(+$h,3), contributor.Existed = date}
 	
 	set sc = contributor.%Save()
 	Quit sc
@@ -124,6 +139,9 @@
 </Value>
 <Value name="5">
 <Value>Member</Value>
+</Value>
+<Value name="6">
+<Value>Existed</Value>
 </Value>
 </Data>
 </Storage>

@@ -16,5 +16,6 @@ GitHub.Task.cls
 GitHub.Updater.cls
 History.Clones.cls
 History.Commits.cls
+History.Contributors.cls
 History.Views.cls
 SSL.Configuration.cls

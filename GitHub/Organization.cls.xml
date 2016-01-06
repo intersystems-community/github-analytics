@@ -33,6 +33,25 @@ This class contain information about organization of repositories</Description>
 <Parameter name="MAXLEN" value="255"/>
 </Property>
 
+<Property name="RepositoriesAmount">
+<Type>%Integer</Type>
+<Calculated>1</Calculated>
+<SqlComputeCode> set {*} = ##class(GitHub.Organization).GetRepositoriesAmount({Name})</SqlComputeCode>
+<SqlComputed>1</SqlComputed>
+</Property>
+
+<Method name="GetRepositoriesAmount">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>name</FormalSpec>
+<ReturnType>%Integer</ReturnType>
+<Implementation><![CDATA[
+	set sql = "Select Count(Id) As ReposAmount From GitHub.Repository Where Organization->Name = ? "
+	set rs = ##class(%SQL.Statement).%ExecDirect(,sql, name)
+	if rs.%Next() {set result = rs.ReposAmount}
+	Quit result
+]]></Implementation>
+</Method>
+
 <Property name="Contributors">
 <Type>GitHub.Contributor</Type>
 <Cardinality>many</Cardinality>
@@ -110,8 +129,6 @@ url</Description>
 <IndexLocation>^GitHub.OrganizationI</IndexLocation>
 <StreamLocation>^GitHub.OrganizationS</StreamLocation>
 <Data name="OrganizationDefaultData">
-<Structure>listnode</Structure>
-<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

@@ -7,6 +7,7 @@
 <Method name="UpdateAll">
 <ClassMethod>1</ClassMethod>
 <FormalSpec>organizationName="intersystems-ru",login:%String="",password:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	set sc = 1
 
@@ -44,7 +45,6 @@
 		
 		#; Views
 		set sc = activityRequest.GetActivityData("/graphs/traffic-data", organizationName, repository("Name"), .objectZen)
-		write !,sc
 		if sc = "html"{
 			write !, "Have no access to history of views and clones data",!
 			set sc = 1
@@ -79,6 +79,7 @@
 		set sc = ##class(GitHub.ActivityData).SetOrIgnoreClonesHistory(.clones,.repository) Quit:'sc
 			}
 		}
+	Quit sc
 ]]></Implementation>
 </Method>
 
@@ -101,7 +102,7 @@
 		if countPrevious > count Quit ;#Count of Member objects on this page reduced, it means that next page will be empty
 		set countPrevious = count, page = page + 1
 		}
-
+	
 	Quit sc
 ]]></Implementation>
 </Method>
