@@ -68,6 +68,20 @@ organization's repositories collection</Description>
 <Relationship>1</Relationship>
 </Property>
 
+<Property name="HistoryContributors">
+<Type>History.Contributors</Type>
+<Cardinality>many</Cardinality>
+<Inverse>Organization</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="HistoryRepositories">
+<Type>History.Repositories</Type>
+<Cardinality>many</Cardinality>
+<Inverse>Organization</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
 <Property name="People">
 <Type>%Integer</Type>
 <Calculated>1</Calculated>

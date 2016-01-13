@@ -115,6 +115,8 @@ This class contain information about repositories</Description>
 		if ##class(GitHub.Repository).NameExists( data(num,"Name"), .repositoryId ){
 			set sc = ##class(GitHub.Repository).Update(.data, num, repositoryId) Quit:'sc
 			
+			set sc = ##class(History.Repositories).Insert(data(num,"Name"),data(num,"Link"),data("Organization"),0) Quit:'sc
+
 			set num = num + 1
 			Continue
 			}
@@ -125,7 +127,9 @@ This class contain information about repositories</Description>
 		set listToUpdate(numToUpdate,"Name") = data(num,"Name")
 		,listToUpdate(numToUpdate,"Id") = data
 		,listToUpdate("Amount") = listToUpdate("Amount") + 1
-		
+
+		set sc = ##class(History.Repositories).Insert(data(num,"Name"),data(num,"Link"),data("Organization"),1) Quit:'sc
+
 		set num = num + 1
 		}
 	
