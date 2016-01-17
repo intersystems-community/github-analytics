@@ -14,9 +14,10 @@ To install it
 write ##class(GitHub.Task).LoadAll(organizationName, login, password)
 
 Where 
-+ organization name takes from organization's github url(eg for [Intersystems corp. Russia](https://github.com/intersystems-ru) url is https://github.com/intersystems-ru and organizationName = "intersystems-ru")
++ organizationName takes from organization's github url(eg for [Intersystems corp. Russia](https://github.com/intersystems-ru) url is https://github.com/intersystems-ru and organizationName = "intersystems-ru")
 + login - your login on Github.com
 + password - your password on Github.com
+
 It need login and password for getting data of views and clones of repositories(where you can push) 
 
 2.Every next launch execute next line
