@@ -46,10 +46,6 @@ This class contain information about repositories</Description>
 <OnDelete>cascade</OnDelete>
 </Property>
 
-<Property name="Type">
-<Type>%String</Type>
-</Property>
-
 <Property name="Stars">
 <Type>%Integer</Type>
 </Property>
@@ -145,13 +141,12 @@ This class contain information about repositories</Description>
 	set tmpName = data(num,"Name"), tmpDescription = data(num,"Description")
 	, tmpForks = data(num,"Forks"), tmpIssuesOpened = data(num,"IssuesOpened")
 	, tmpLink = data(num,"Link"), tmpStars = data(num,"Stars")
-	, tmpType = data(num,"Type"), tmpUpdated = data(num,"Updated")
-	, tmpCreated = data(num,"Created"), tmpPushed = data(num,"Pushed")	
+	, tmpUpdated = data(num,"Updated"), tmpCreated = data(num,"Created"), tmpPushed = data(num,"Pushed")	
 	&sql(
-		Insert Into GitHub.Repository (Organization,Name,Description,Forks,IssuesOpened,Link,Stars,Type,Updated,Created,Pushed)
+		Insert Into GitHub.Repository (Organization,Name,Description,Forks,IssuesOpened,Link,Stars,Updated,Created,Pushed)
 		Values (
 			:data("Organization"), :tmpName, :tmpDescription, :tmpForks, :tmpIssuesOpened
-			, :tmpLink, :tmpStars, :tmpType, :tmpUpdated, :tmpCreated, :tmpPushed
+			, :tmpLink, :tmpStars, :tmpUpdated, :tmpCreated, :tmpPushed
 		)
 	)
 	if SQLCODE=0 {
@@ -182,52 +177,5 @@ Created,Forks,IssuesOpened,Pushed,Updated,Stars</Description>
 	Q $$$ERROR($$$GeneralError,$system.SQL.SQLCODE(SQLCODE))
 ]]></Implementation>
 </Method>
-
-<Storage name="Default">
-<Type>%Library.CacheStorage</Type>
-<DataLocation>^GitHub.RepositoryD</DataLocation>
-<DefaultData>RepositoryDefaultData</DefaultData>
-<IdLocation>^GitHub.RepositoryD</IdLocation>
-<IndexLocation>^GitHub.RepositoryI</IndexLocation>
-<StreamLocation>^GitHub.RepositoryS</StreamLocation>
-<Data name="RepositoryDefaultData">
-<Value name="1">
-<Value>%%CLASSNAME</Value>
-</Value>
-<Value name="2">
-<Value>Name</Value>
-</Value>
-<Value name="3">
-<Value>Organization</Value>
-</Value>
-<Value name="4">
-<Value>Type</Value>
-</Value>
-<Value name="5">
-<Value>Stars</Value>
-</Value>
-<Value name="6">
-<Value>Forks</Value>
-</Value>
-<Value name="7">
-<Value>Link</Value>
-</Value>
-<Value name="8">
-<Value>IssuesOpened</Value>
-</Value>
-<Value name="9">
-<Value>Description</Value>
-</Value>
-<Value name="10">
-<Value>Updated</Value>
-</Value>
-<Value name="11">
-<Value>Pushed</Value>
-</Value>
-<Value name="12">
-<Value>Created</Value>
-</Value>
-</Data>
-</Storage>
 </Class>
 </Export>

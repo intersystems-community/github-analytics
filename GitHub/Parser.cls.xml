@@ -34,20 +34,26 @@
 
 <Method name="ParseOrgRepos">
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&orgRepos,objectZen]]></FormalSpec>
+<FormalSpec><![CDATA[&orgRepos,objectZen,&count]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	
+	set ignore = 0
 	for i=1:1:objectZen.Count() {
 		set repoData = objectZen.GetAt(i)
-		set orgRepos(i,"Description") = repoData.description, orgRepos(i,"Forks") = repoData."forks_count"
-		, orgRepos(i,"IssuesOpened") = repoData."open_issues_count", orgRepos(i,"Link") = repoData."html_url"
-		, orgRepos(i,"Name") = repoData.name, orgRepos(i,"Stars") = repoData."stargazers_count"
-		, orgRepos(i,"Type") = repoData.private ;#1 or 0
-		, orgRepos(i,"Updated") = ##class(GitHub.Parser).ConvertDate(repoData."updated_at")
-		, orgRepos(i,"Created") = ##class(GitHub.Parser).ConvertDate(repoData."created_at")
-		, orgRepos(i,"Pushed") = ##class(GitHub.Parser).ConvertDate(repoData."pushed_at")
+		set type = repoData.private ;#1 or 0
+		if type = 1 {
+			set ignore = ignore + 1
+			kill type
+			Continue
+			}
+		set orgRepos(i-ignore,"Description") = repoData.description, orgRepos(i-ignore,"Forks") = repoData."forks_count"
+		, orgRepos(i-ignore,"IssuesOpened") = repoData."open_issues_count", orgRepos(i-ignore,"Link") = repoData."html_url"
+		, orgRepos(i-ignore,"Name") = repoData.name, orgRepos(i-ignore,"Stars") = repoData."stargazers_count"
+		, orgRepos(i-ignore,"Updated") = ##class(GitHub.Parser).ConvertDate(repoData."updated_at")
+		, orgRepos(i-ignore,"Created") = ##class(GitHub.Parser).ConvertDate(repoData."created_at")
+		, orgRepos(i-ignore,"Pushed") = ##class(GitHub.Parser).ConvertDate(repoData."pushed_at")
 		}
+	set count = objectZen.Count() - ignore
 	Quit 1
 ]]></Implementation>
 </Method>

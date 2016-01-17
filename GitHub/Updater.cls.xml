@@ -118,7 +118,7 @@
 		if count = 0 {Quit}
 		
 		set repository("Organization") = organizationId
-		set sc = ##class(GitHub.Parser).ParseOrgRepos(.repository, objectZen) Quit:'sc
+		set sc = ##class(GitHub.Parser).ParseOrgRepos(.repository, objectZen, .count) Quit:'sc
 		
 		for num = 1:1:count{
 			set sql = "Select Pushed,Id From GitHub.Repository Where Name = ? "

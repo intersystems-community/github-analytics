@@ -7,6 +7,7 @@
 <Method name="LoadAll">
 <ClassMethod>1</ClassMethod>
 <FormalSpec>organizationName="intersystems-ru",login:%String="",password:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	set sc = 1
 
@@ -63,6 +64,7 @@
 		
 		set sc = ##class(GitHub.ActivityData).SetClonesHistory(.clones,.repository) Quit:'sc
 		}
+	Quit sc
 ]]></Implementation>
 </Method>
 
@@ -130,7 +132,7 @@
 		if count = 0 {Quit}
 		
 		set repository("Organization") = organizationId
-		set sc = ##class(GitHub.Parser).ParseOrgRepos(.repository, objectZen) Quit:'sc
+		set sc = ##class(GitHub.Parser).ParseOrgRepos(.repository, objectZen, .count) Quit:'sc
 		for num = 1:1:count{
 			set sc = ##class(GitHub.Repository).Insert(.repository, num) Quit:'sc
 			}
