@@ -9,22 +9,14 @@
 <FormalSpec>organization="intersystems-ru",login,password</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	s sc=##class(GitHub.Loader).LoadAll(organization,login,password)
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("Commits")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("CommitsByContributors")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("Contributors")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("HistoryClones")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("HistoryContributors")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("HistoryViews")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("Repositories")
-	q sc
+	set sc=##class(GitHub.Loader).LoadAll(organization,login,password)
+#;	//Write here code for building cube
+#;	//Example\/
+#;	if $$$ISERR(sc) Quit sc
+#;	set sc=##class(%DeepSee.Utils).%BuildCube("Commits")
+#;	if $$$ISERR(sc) Quit sc
+#;	set sc=##class(%DeepSee.Utils).%BuildCube("CommitsByContributors")	
+	Quit sc
 ]]></Implementation>
 </Method>
 
@@ -33,22 +25,14 @@
 <FormalSpec>organization="intersystems-ru",login,password</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	s sc=##class(GitHub.Updater).UpdateAll(organization,login,password)
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("Commits")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("CommitsByContributors")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("Contributors")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("HistoryClones")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("HistoryContributors")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("HistoryViews")
-	if $$$ISERR(sc) q sc
-	s sc=##class(%DeepSee.Utils).%BuildCube("Repositories")
-	q sc
+	set sc=##class(GitHub.Updater).UpdateAll(organization,login,password)
+#;	//Write here code for building cube
+#;	//Example\/
+#;	if $$$ISERR(sc) Quit sc
+#;	set sc=##class(%DeepSee.Utils).%BuildCube("Commits")
+#;	if $$$ISERR(sc) Quit sc
+#;	set sc=##class(%DeepSee.Utils).%BuildCube("CommitsByContributors")	
+	Quit sc
 ]]></Implementation>
 </Method>
 </Class>
