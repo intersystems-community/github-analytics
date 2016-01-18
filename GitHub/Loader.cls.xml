@@ -6,7 +6,7 @@
 
 <Method name="LoadAll">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>organizationName="intersystems-ru",login:%String="",password:%String=""</FormalSpec>
+<FormalSpec>organizationName="intersystems-ru",login:%String="",password:%String="",verbose:%Boolean=1</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	set sc = 1
@@ -21,17 +21,17 @@
 		set sc = ##class(GitHub.Organization).NameDelete(organizationName)
 		}
 				
-    set APIRequest = ..CreateAPIRequest(login, password)
+    set APIRequest = ..CreateAPIRequest(login, password,verbose)
 	
-	set sc = APIRequest.LoadOrganization(organizationName, .organizationId) Quit:'sc sc
+	set sc = APIRequest.LoadOrganization(organizationName, .organizationId, verbose) Quit:'sc sc
 	
-	set sc = APIRequest.LoadOrgMembers(organizationName, organizationId) Quit:'sc sc
+	set sc = APIRequest.LoadOrgMembers(organizationName, organizationId, verbose) Quit:'sc sc
 	
-	set sc = APIRequest.LoadOrgRepos(organizationName, organizationId) Quit:'sc sc	
+	set sc = APIRequest.LoadOrgRepos(organizationName, organizationId, verbose) Quit:'sc sc	
 	
 		
-	write !,"Load repositories's commits and history of views and clones"
-	set activityRequest = ##class(GitHub.ActivityData).CreateLoggedSession(login,password)
+	write:verbose !,"Load repositories's commits and history of views and clones"
+	set activityRequest = ##class(GitHub.ActivityData).CreateLoggedSession(login,password,verbose)
 	
 	set numberOfRepository = 1
 	set sql = "Select Name, Id From GitHub.Repository Where Organization->Name = ? "
@@ -39,22 +39,22 @@
 	while rs.%Next() {
 		set repository("Name") = rs.Name, repository("Id") = rs.Id
 		
-		write !,numberOfRepository_"."
+		write:verbose !,numberOfRepository_"."
 		set numberOfRepository = numberOfRepository + 1
 		
-		set sc = APIRequest.LoadRepoCommits(organizationName,.repository) Quit:'sc
+		set sc = APIRequest.LoadRepoCommits(organizationName,.repository, verbose) Quit:'sc
 		
 		#; Views
 		set sc = activityRequest.GetActivityData("/graphs/traffic-data", organizationName, repository("Name"), .objectZen)
 		if sc = "html"{
-			write !, "Have no access to history of views and clones data",!
+			write:verbose !, "Have no access to history of views and clones data",!
 			set sc = 1
 			Continue
 			}
 		else{
 			set sc = ##class(GitHub.ActivityData).ParseHistory(.views, objectZen) Quit:'sc
 			
-			set sc = ##class(GitHub.ActivityData).SetViewsHistory(.views,.repository) Quit:'sc
+			set sc = ##class(GitHub.ActivityData).SetViewsHistory(.views,.repository,verbose) Quit:'sc
 			}
 			
 		#; Clones
@@ -62,7 +62,7 @@
 		
 		set sc = ##class(GitHub.ActivityData).ParseHistory(.clones, objectZen) Quit:'sc
 		
-		set sc = ##class(GitHub.ActivityData).SetClonesHistory(.clones,.repository) Quit:'sc
+		set sc = ##class(GitHub.ActivityData).SetClonesHistory(.clones,.repository,verbose) Quit:'sc
 		}
 	Quit sc
 ]]></Implementation>
@@ -81,10 +81,10 @@
 </Method>
 
 <Method name="LoadOrganization">
-<FormalSpec><![CDATA[organizationName:%String,&organizationId]]></FormalSpec>
+<FormalSpec><![CDATA[organizationName:%String,&organizationId,verbose:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	write !,"Load organization's properties"
+	write:verbose !,"Load organization's properties"
 	set sc = ..GetOrganization(organizationName, .objectZen) Quit:'sc sc
 
 	set sc = ##class(GitHub.Parser).ParseOrganization(.organization, objectZen) Quit:'sc sc
@@ -97,10 +97,10 @@
 </Method>
 
 <Method name="LoadOrgMembers">
-<FormalSpec>organizationName:%String,organizationId</FormalSpec>
+<FormalSpec>organizationName:%String,organizationId,verbose:%Boolean</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	write !,"Load organization's members"
+	write:verbose !,"Load organization's members"
 	set countPrevious = 1, page = 1
 	while 1{
 		set sc = ..GetOrgMembers(organizationName, .objectZen, .count, page) Quit:'sc
@@ -122,10 +122,10 @@
 </Method>
 
 <Method name="LoadOrgRepos">
-<FormalSpec>organizationName:%String,organizationId</FormalSpec>
+<FormalSpec>organizationName:%String,organizationId,verbose:%Boolean</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	write !,"Load organization's repositories"
+	write:verbose !,"Load organization's repositories"
 	set countPrevious = 1, page = 1
 	while 1{
 		set sc = ..GetOrgRepos(organizationName, .objectZen, .count, page)
@@ -146,10 +146,10 @@
 </Method>
 
 <Method name="LoadRepoCommits">
-<FormalSpec><![CDATA[organizationName,&repository]]></FormalSpec>
+<FormalSpec><![CDATA[organizationName,&repository,verbose:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	write "Repository "_repository("Name"),!,"Commits load",!
+	write:verbose "Repository "_repository("Name"),!,"Commits load",!
 	set countPrevious = 1, page = 1
 	while 1{
 		set sc = ..GetRepoCommits(organizationName, repository("Name"), .objectZen, .count, page)
@@ -163,10 +163,10 @@
 			set sc = ##class(GitHub.Commit).Insert(.commit, num) Quit:'sc
 			}
 		
-		write "."
+		write:verbose "."
 		kill commit
 		if countPrevious > count Quit ;#Count of Repos objects on this page reduced, it means that next page will be empty
-		set countPrevious = count, page = page + 1
+		set countPrevious = count , page = page + 1
 		}
 	Quit sc
 ]]></Implementation>

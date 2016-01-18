@@ -11,12 +11,12 @@
 
 <Method name="CreateAPIRequest">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>login:%String,password:%String</FormalSpec>
+<FormalSpec>login:%String,password:%String,verbose:%Boolean</FormalSpec>
 <ReturnType>GitHub.API</ReturnType>
 <Implementation><![CDATA[
 	set sslConfigName = "github.com"
 	set sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
-		write !, "SSLConfig error: ", sc 	
+		write:verbose !, "SSLConfig error: ", sc 	
 	}
 	
 	set object = ..%New()

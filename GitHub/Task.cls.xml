@@ -6,10 +6,10 @@
 
 <Method name="LoadAll">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>organization="intersystems-ru",login,password</FormalSpec>
+<FormalSpec>organization="intersystems-ru",login,password,verbose:%Boolean=1</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	set sc=##class(GitHub.Loader).LoadAll(organization,login,password)
+	set sc=##class(GitHub.Loader).LoadAll(organization,login,password,verbose)
 #;	//Write here code for building cube
 #;	//Example\/
 #;	if $$$ISERR(sc) Quit sc
@@ -22,10 +22,10 @@
 
 <Method name="UpdateAll">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>organization="intersystems-ru",login,password</FormalSpec>
+<FormalSpec>organization="intersystems-ru",login,password,verbose:%Boolean=1</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	set sc=##class(GitHub.Updater).UpdateAll(organization,login,password)
+	set sc=##class(GitHub.Updater).UpdateAll(organization,login,password,verbose)
 #;	//Write here code for building cube
 #;	//Example\/
 #;	if $$$ISERR(sc) Quit sc

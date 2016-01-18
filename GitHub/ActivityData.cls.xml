@@ -10,7 +10,7 @@
 
 <Method name="CreateLoggedSession">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>login="",password=""</FormalSpec>
+<FormalSpec>login="",password="",verbose:%Boolean</FormalSpec>
 <ReturnType>GitHub.ActivityData</ReturnType>
 <Implementation><![CDATA[
 	set activityRequest = ##class(GitHub.ActivityData).%New()
@@ -19,7 +19,7 @@
 	set sslConfigName = "github.com"
 	set activityRequest.request.Server = sslConfigName
 	set sc = ##class(SSL.Configuration).SSLConfig( sslConfigName ) if 'sc {
-		write !, "SSLConfig error: ", sc 	
+		write:verbose !, "SSLConfig error: ", sc 	
 	}
 	set activityRequest.request.SSLConfiguration = sslConfigName
 	set activityRequest.request.Https=1
@@ -37,7 +37,7 @@
 	set sc = activityRequest.request.Post("/session") 
 	
 	if activityRequest.request.HttpResponse.StatusCode'=302{
-		write "Login or password are incorrect."
+		write:verbose "Login or password are incorrect."
 		Q 0
 		}
 	Quit activityRequest
@@ -98,7 +98,7 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
 
 <Method name="SetOrIgnoreViewsHistory">
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&views,&repository]]></FormalSpec>
+<FormalSpec><![CDATA[&views,&repository,verbose:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	set sql = "Select Top 1 DateOfData, Id From History.Views Where Repository = ? Order By DateOfData Desc"
@@ -118,27 +118,27 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
 			Quit}
 		set num = num + 1
 		}
-	set sc = ##class(GitHub.ActivityData).SetViewsHistory(.views,.repository) 
+	set sc = ##class(GitHub.ActivityData).SetViewsHistory(.views,.repository, verbose) 
 	Quit sc
 ]]></Implementation>
 </Method>
 
 <Method name="SetViewsHistory">
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&views,&repository]]></FormalSpec>
+<FormalSpec><![CDATA[&views,&repository,verbose:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	set views("RepositoryId") = repository("Id")
 	set sc = ##class(History.Views).Insert(.views)
 	
-	write:sc !,"History of views successfuly loaded"
+	write:(verbose&sc) !,"History of views successfuly loaded"
 	Quit sc
 ]]></Implementation>
 </Method>
 
 <Method name="SetOrIgnoreClonesHistory">
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&clones,&repository]]></FormalSpec>
+<FormalSpec><![CDATA[&clones,&repository,verbose:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	set sql = "Select Top 1 DateOfData, Id From History.Clones Where Repository = ? Order By DateOfData Desc"
@@ -158,20 +158,20 @@ value="CLpoy4KS/Nbnn4uyTd/vf/WuhcF8NOhU4QSualOfABlYzSIp2f6nEBDozj5y05hYuiGJRS6fr
 			Quit}
 		set num = num + 1
 		}
-	set sc = ##class(GitHub.ActivityData).SetClonesHistory(.clones,.repository) 
+	set sc = ##class(GitHub.ActivityData).SetClonesHistory(.clones,.repository, verbose) 
 	Quit sc
 ]]></Implementation>
 </Method>
 
 <Method name="SetClonesHistory">
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&clones,&repository]]></FormalSpec>
+<FormalSpec><![CDATA[&clones,&repository,verbose:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	set clones("RepositoryId") = repository("Id")
 	set sc = ##class(History.Clones).Insert(.clones)
 	
-	write:sc !,"History of clones successfuly loaded",!
+	write:(verbose&sc) !,"History of clones successfuly loaded",!
 	Quit sc
 ]]></Implementation>
 </Method>
